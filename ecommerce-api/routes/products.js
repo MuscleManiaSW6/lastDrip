@@ -15,13 +15,13 @@ import authorizeAdmin from "../middlewares/authorizeAdmin.js";
 
 const router = express.Router();
 
-router.get("/search", getSearch);
-
 router.get("/", getProduct);
 
-router.post("/", authenticateUser, authorizeAdmin, postProduct);
+router.get("/search", getSearch);
 
 router.get("/:id", validateObjectId, getProductId);
+
+router.post("/", authenticateUser, authorizeAdmin, postProduct);
 
 router.put(
   "/:id",

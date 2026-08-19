@@ -13,10 +13,6 @@ import {
 const getProduct = async (req, res) => {
   const { name, price, id, page = 1, limit = 5, sort } = req.query;
 
-  if (name || price || id) {
-    return getSearch(req, res);
-  }
-
   const product = await getAllProducts(page, limit, sort);
   return res.status(200).json(product);
 };
