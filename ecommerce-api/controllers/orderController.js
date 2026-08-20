@@ -8,18 +8,28 @@ import {
 
 //* POST(/)
 const orderProduct = async (req, res) => {
-  const { userId } = req.user;
-  const { products } = req.body;
+  try {
+    const { userId } = req.user;
+    const { products } = req.body;
 
-  const order = await userOrder(userId, products);
+    const order = await userOrder(userId, products);
 
-  if (!order) {
-    return res
-      .status(400)
-      .json({ message: "One or more products were not found" });
+    return res.status(201).json(order);
+  } catch (err) {
+    if (err.message === "PRODUCT_NOT_FOUND") {
+      return res
+        .status(404)
+        .json({ message: "One or more product were not found" });
+    }
+
+    if (err.message === "INSUFFICIENT_STOCK") {
+      return res.status(409).json({ message: "INSUFFICIENT_STOCK" });
+    }
+
+    console.error(err);
+
+    return res.status(500).json({ message: "Failed to create order" });
   }
-
-  return res.status(201).json(order);
 };
 
 //* GET(/)
