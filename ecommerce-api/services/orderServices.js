@@ -1,6 +1,7 @@
 import Order from "../models/Orders.js";
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
+import { createRazorpayOrder } from "./paymentServices.js";
 
 //* POST(/)
 const userOrder = async (userId, products) => {
@@ -56,6 +57,14 @@ const userOrder = async (userId, products) => {
 
       return newOrder;
     });
+
+    const razorpayOrder = await createRazorpayOrder(
+      order.totalPrice,
+      order._id.toString(),
+    );
+
+    order.payment.razorpayOrderId = razorpayOrder.id;
+    await order.save();
 
     return order;
   } finally {
