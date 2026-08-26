@@ -5,6 +5,8 @@ import authRouter from "./routes/userAuth.js";
 import productRouter from "./routes/products.js";
 import orderRouter from "./routes/orders.js";
 
+import errorHandler from "./middlewares/errorhandler.js";
+
 const app = express();
 
 app.use(express.json());
@@ -22,5 +24,7 @@ app.get("/", (req, res) => {
 app.use((req, res) => {
   res.status(404).json({ message: "Page not found" });
 });
+
+app.use(errorHandler);
 
 export default app;
