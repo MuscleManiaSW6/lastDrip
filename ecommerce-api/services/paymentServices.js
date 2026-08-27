@@ -60,6 +60,15 @@ const verifyRazorpayPayment = async (
     throw error;
   }
 
+  if (order.payment.status === "captured") {
+    if (order.payment.razorpayPaymentId === razorpayPaymentId) {
+      return order;
+    }
+    const error = new Error("PAYMENT_ID_MISMATCH");
+    error.statusCode = 400;
+    throw error;
+  }
+
   order.payment.status = "captured";
   order.payment.razorpayPaymentId = razorpayPaymentId;
 
