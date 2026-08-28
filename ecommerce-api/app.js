@@ -4,14 +4,17 @@ import cors from "cors";
 import authRouter from "./routes/userAuth.js";
 import productRouter from "./routes/products.js";
 import orderRouter from "./routes/orders.js";
+import webhookRouter from "./routes/webhooks.js";
 
 import errorHandler from "./middlewares/errorhandler.js";
 
 const app = express();
 
-app.use(express.json());
-
 app.use(cors());
+
+app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
+
+app.use(express.json());
 
 app.use("/auth", authRouter);
 app.use("/products", productRouter);
