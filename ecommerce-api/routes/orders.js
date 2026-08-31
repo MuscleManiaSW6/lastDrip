@@ -1,6 +1,7 @@
 import express from "express";
 import authenticateUser from "../middlewares/authenticateToken.js";
 import {
+  cancelUserOrder,
   getAllOrders,
   getOrders,
   getOrdersById,
@@ -38,6 +39,13 @@ router.patch(
   authorizeAdmin,
   validateStatus,
   updateOrderStatus,
+);
+
+router.patch(
+  "/:id/cancel",
+  validateObjectId,
+  authenticateUser,
+  cancelUserOrder,
 );
 
 export default router;

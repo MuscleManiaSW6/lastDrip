@@ -95,16 +95,95 @@ const getAllUserOrder = async () => {
 
 //* PATCH(/:id/status)
 const updateStatus = async (id, status) => {
-  return await Order.findByIdAndUpdate(
-    id,
-    { status: status },
-    {
-      returnDocument: "after",
-      runValidators: true,
-    },
-  )
-    .populate("user", "name email")
-    .populate("products.product", "name price");
+  const order = await Order.findById(id);
+
+  if (!order) {
+    const error = new Error("ORDER_NOT_FOUND");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const allowed = canChangeOrderStatus(order.status, status);
+
+  if (!allowed) {
+    const error = new Error("INVALID_STATUS_TRANSITION");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  order.status = status;
+
+  await order.save();
+
+  await order.populate([
+    { path: "user", select: "name email" },
+    { path: "products.product", select: "name price" },
+  ]);
+
+  return order;
+};
+
+//*validates the status change
+const canChangeOrderStatus = (currentStatus, newStatus) => {
+  const allowedTransitions = {
+    pending: ["processing", "cancelled"],
+    processing: ["shipped", "cancelled"],
+    shipped: ["delivered"],
+    delivered: [],
+    cancelled: [],
+  };
+
+  return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
+};
+
+//* PATCH(/:id/cancel)
+const cancelOrder = async (orderId, userId) => {
+  const session = await mongoose.startSession();
+
+  try {
+    let cancelledOrder;
+
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ _id: orderId, user: userId }).session(
+        session,
+      );
+
+      if (!order) {
+        const error = new Error("ORDER_NOT_FOUND");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      if (!canChangeOrderStatus(order.status, "cancelled")) {
+        const error = new Error("ORDER_CANNOT_BE_CANCELLED");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      for (const item of order.products) {
+        await Product.findByIdAndUpdate(
+          item.product,
+          {
+            $inc: { stock: item.quantity },
+          },
+          { session },
+        );
+      }
+
+      order.status = "cancelled";
+      await order.save({ session });
+      cancelledOrder = order;
+    });
+
+    await cancelledOrder.populate([
+      { path: "user", select: "name email" },
+      { path: "products.product", select: "name price" },
+    ]);
+
+    return cancelledOrder;
+  } finally {
+    await session.endSession();
+  }
 };
 
 export {
@@ -113,4 +192,5 @@ export {
   getUserOrderById,
   getAllUserOrder,
   updateStatus,
+  cancelOrder,
 };

@@ -1,4 +1,5 @@
 import {
+  cancelOrder,
   getAllUserOrder,
   getUserOrder,
   getUserOrderById,
@@ -80,10 +81,21 @@ const updateOrderStatus = async (req, res) => {
   return res.status(200).json(updated);
 };
 
+//* PATCH (/:id/cancel)
+const cancelUserOrder = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  const cancelledOrder = await cancelOrder(id, userId);
+
+  return res.status(200).json(cancelledOrder);
+};
+
 export {
   orderProduct,
   getOrders,
   getOrdersById,
   getAllOrders,
   updateOrderStatus,
+  cancelUserOrder,
 };
