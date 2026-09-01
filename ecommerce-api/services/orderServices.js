@@ -111,6 +111,12 @@ const updateStatus = async (id, status) => {
     throw error;
   }
 
+  if (status === "processing" && order.payment.status !== "captured") {
+    const error = new Error("PAYMENT_NOT_CAPTURED");
+    error.statusCode = 400;
+    throw error;
+  }
+
   order.status = status;
 
   await order.save();

@@ -1,5 +1,9 @@
-import { verifyRazorpayPayment } from "../services/paymentServices.js";
+import {
+  refundPayment,
+  verifyRazorpayPayment,
+} from "../services/paymentServices.js";
 
+//* POST(/:id/payment/verify)
 const verifyPayment = async (req, res) => {
   const { id } = req.params;
 
@@ -23,4 +27,14 @@ const verifyPayment = async (req, res) => {
   return res.status(200).json(order);
 };
 
-export { verifyPayment };
+//* POST(/:id/payment/refund)
+const refundOrderPayment = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  const order = await refundPayment(id, userId);
+
+  return res.status(200).json(order);
+};
+
+export { verifyPayment, refundOrderPayment };

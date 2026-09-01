@@ -3,6 +3,7 @@ import crypto from "crypto";
 import Order from "../models/Orders.js";
 import razorpay from "../config/razorpay.js";
 
+//* Razorpay Order creation
 const createRazorpayOrder = async (amount, receipt) => {
   return await razorpay.orders.create({
     amount: amount * 100,
@@ -11,6 +12,7 @@ const createRazorpayOrder = async (amount, receipt) => {
   });
 };
 
+//* POST(/:id/payment/verify)
 const verifyRazorpayPayment = async (
   orderId,
   userId,
@@ -77,4 +79,39 @@ const verifyRazorpayPayment = async (
   return order;
 };
 
-export { createRazorpayOrder, verifyRazorpayPayment };
+//* Refund Validation
+const canRefundPayment = (paymentStatus) => {
+  return paymentStatus === "captured";
+};
+
+//* POST(/:id/payment/refund)
+const refundPayment = async (orderId, userId) => {
+  const order = await Order.findOne({ _id: orderId, user: userId });
+
+  if (!order) {
+    const error = new Error("ORDER_NOT_FOUND");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (order.status !== "cancelled") {
+    const error = new Error("ORDER_NOT_CANCELLED");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (order.payment.status === "refunded") {
+    return order;
+  }
+
+  if (!canRefundPayment(order.payment.status)) {
+    const error = new Error("PAYMENT_NOT_REFUNDABLE");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await order.save();
+  return order;
+};
+
+export { createRazorpayOrder, verifyRazorpayPayment, refundPayment };
