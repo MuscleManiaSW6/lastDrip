@@ -66,6 +66,8 @@ const userOrder = async (userId, products) => {
     order.payment.razorpayOrderId = razorpayOrder.id;
     await order.save();
 
+    await order.populate("user", "name email");
+
     return order;
   } finally {
     await session.endSession();

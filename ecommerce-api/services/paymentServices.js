@@ -110,6 +110,8 @@ const refundPayment = async (orderId, userId) => {
     throw error;
   }
 
+  order.payment.status = "refunded";
+
   await order.save();
   return order;
 };

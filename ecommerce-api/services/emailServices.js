@@ -17,4 +17,38 @@ const sendEmail = async (to, subject, html) => {
   return data;
 };
 
-export { sendEmail };
+const orderConfirmationEmail = async (order) => {
+  const html = `
+  <h1>Order Confirmed</h1>
+
+  <p>Hi ${order.user.name},</p>
+
+  <p>Thank you for your order</p>
+
+  <h2>Order Details</h2>
+
+  <p><strong>Order ID: </strong> ${order._id}</p>
+
+  <ul>
+    ${order.products
+      .map(
+        (item) => `<li>
+      ${item.name} x ${item.quantity} - Rs${item.price * item.quantity}
+      </li>`,
+      )
+      .join("")}
+  </ul>
+
+  <p><strong>Total:</strong> Rs${order.totalPrice}</p>
+
+  <p>Your order is currently pending payment</p>
+  `;
+
+  return await sendEmail(
+    order.user.email,
+    "lastDrip - Order Confirmation",
+    html,
+  );
+};
+
+export { sendEmail, orderConfirmationEmail };

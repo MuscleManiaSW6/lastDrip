@@ -3,6 +3,7 @@ import cors from "cors";
 
 import authRouter from "./routes/userAuth.js";
 import productRouter from "./routes/products.js";
+import cartRouter from "./routes/cart.js";
 import orderRouter from "./routes/orders.js";
 import webhookRouter from "./routes/webhooks.js";
 
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use("/auth", authRouter);
 app.use("/products", productRouter);
+app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 
 app.get("/", (req, res) => {

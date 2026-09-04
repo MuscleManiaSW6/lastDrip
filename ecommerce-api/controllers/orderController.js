@@ -1,3 +1,4 @@
+import { orderConfirmationEmail } from "../services/emailServices.js";
 import {
   cancelOrder,
   getAllUserOrder,
@@ -14,6 +15,8 @@ const orderProduct = async (req, res) => {
     const { products } = req.body;
 
     const order = await userOrder(userId, products);
+
+    await orderConfirmationEmail(order);
 
     return res.status(201).json(order);
   } catch (err) {
