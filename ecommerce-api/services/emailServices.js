@@ -1,20 +1,23 @@
 import resend from "../config/resend.js";
+import { retry } from "../utils/retry.js";
 
 const sendEmail = async (to, subject, html) => {
-  const { data, error } = await resend.emails.send({
-    from: "LastDrip <onboarding@resend.dev>",
-    to,
-    subject,
-    html,
+  return await retry(async () => {
+    const { data, error } = await resend.emails.send({
+      from: "LastDrip <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      const err = new Error(error.message);
+      err.statusCode = 500;
+      throw err;
+    }
+
+    return data;
   });
-
-  if (error) {
-    const err = new Error(error.message);
-    err.statusCode = 500;
-    throw err;
-  }
-
-  return data;
 };
 
 const orderConfirmationEmail = async (order) => {
