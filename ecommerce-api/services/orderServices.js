@@ -1,47 +1,60 @@
 import Order from "../models/Orders.js";
 import Product from "../models/Product.js";
+import Cart from "../models/Cart.js";
 import mongoose from "mongoose";
 import { createRazorpayOrder } from "./paymentServices.js";
 
 //* POST(/)
-const userOrder = async (userId, products) => {
+const userOrder = async (userId) => {
   const session = await mongoose.startSession();
 
   try {
     const order = await session.withTransaction(async () => {
-      let totalPrice = 0;
-      let orderArray = [];
+      const cart = await Cart.findOne({ user: userId }).session(session);
 
-      for (let i = 0; i < products.length; i++) {
-        const product = await Product.findById(products[i].product).session(
+      if (!cart || cart.items.length === 0) {
+        const err = new Error("EMPTY_CART");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      let totalPrice = 0;
+      const orderArray = [];
+
+      for (let i = 0; i < cart.items.length; i++) {
+        const product = await Product.findById(cart.items[i].product).session(
           session,
         );
 
         if (!product) {
-          throw new Error("PRODUCT_NOT_FOUND");
+          const err = new Error("PRODUCT_NOT_FOUND");
+          err.statusCode = 404;
+          throw err;
         }
 
         const updatedProduct = await Product.findOneAndUpdate(
           {
             _id: product._id,
-            stock: { $gte: products[i].quantity },
+            stock: { $gte: cart.items[i].quantity },
           },
-          { $inc: { stock: -products[i].quantity } },
+          { $inc: { stock: -cart.items[i].quantity } },
           { session },
         );
 
         if (!updatedProduct) {
-          throw new Error("INSUFFICIENT_STOCK");
+          const err = new Error("INSUFFICIENT_STOCK");
+          err.statusCode = 400;
+          throw err;
         }
 
         orderArray.push({
           product: product._id,
           name: product.name,
           price: product.price,
-          quantity: products[i].quantity,
+          quantity: cart.items[i].quantity,
         });
 
-        totalPrice += product.price * products[i].quantity;
+        totalPrice += product.price * cart.items[i].quantity;
       }
 
       const [newOrder] = await Order.create(
@@ -55,6 +68,10 @@ const userOrder = async (userId, products) => {
         { session },
       );
 
+      cart.items = [];
+
+      await cart.save({ session });
+
       return newOrder;
     });
 
@@ -64,6 +81,7 @@ const userOrder = async (userId, products) => {
     );
 
     order.payment.razorpayOrderId = razorpayOrder.id;
+
     await order.save();
 
     await order.populate("user", "name email");
