@@ -10,8 +10,15 @@ import {
 //* POST(/)
 const orderProduct = async (req, res) => {
   const { userId } = req.user;
+  const idempotencyKey = req.headers["idempotency-key"];
 
-  const order = await userOrder(userId);
+  if (!idempotencyKey) {
+    const err = new Error("IDEMPOTENCY_KEY_REQUIRED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const order = await userOrder(userId, idempotencyKey);
 
   return res.status(201).json(order);
 };

@@ -39,9 +39,7 @@ const orderConfirmationEmail = async (order) => {
       .join("")}
   </ul>
 
-  <p><strong>Total:</strong> Rs${order.totalPrice}</p>
-
-  <p>Your order is currently pending payment</p>
+  <p>Your payment has been successfully received and your order is now confirmed.</p>
   `;
 
   return await sendEmail(
@@ -51,4 +49,24 @@ const orderConfirmationEmail = async (order) => {
   );
 };
 
-export { sendEmail, orderConfirmationEmail };
+const paymentFailureEmail = async (order) => {
+  const html = `
+  <h1>Payment Failed<h1/>
+
+  <p>Hi ${order.user.name}, </p>
+
+  <p>Unfortunately, your payment for the following order was unsuccessful</p>
+
+  <h2>Order Details</h2>
+
+  <p><strong>Order ID:</strong>${order._id}</p>
+
+  <ul>
+  ${order.products.map((item) => `<li>${item.name} x ${item.quantity} - Rs${item.price * item.quantity}</li>`).join("")}
+  </ul>
+  `;
+
+  return await sendEmail(order.user.email, "lastDrip - Payment Failed", html);
+};
+
+export { sendEmail, orderConfirmationEmail, paymentFailureEmail };

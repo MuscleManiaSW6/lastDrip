@@ -2,6 +2,10 @@ import crypto from "crypto";
 
 import Order from "../models/Orders.js";
 import razorpay from "../config/razorpay.js";
+import {
+  orderConfirmationEmail,
+  paymentFailureEmail,
+} from "./emailServices.js";
 
 //* Razorpay Order creation
 const createRazorpayOrder = async (amount, receipt) => {
@@ -62,26 +66,86 @@ const verifyRazorpayPayment = async (
     throw error;
   }
 
-  if (order.payment.status === "captured") {
-    if (order.payment.razorpayPaymentId === razorpayPaymentId) {
-      return order;
-    }
-    const error = new Error("PAYMENT_ID_MISMATCH");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  order.payment.status = "captured";
-  order.payment.razorpayPaymentId = razorpayPaymentId;
-
-  await order.save();
-
-  return order;
+  return await handlePaymentCaptured(orderId, razorpayPaymentId);
 };
 
 //* Refund Validation
 const canRefundPayment = (paymentStatus) => {
   return paymentStatus === "captured";
+};
+
+//* Order confirmation email sender
+const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      "payment.status": { $ne: "captured" },
+    },
+    {
+      $set: {
+        "payment.status": "captured",
+        "payment.razorpayPaymentId": razorpayPaymentId,
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  if (!updatedOrder) {
+    const existingOrder = await Order.findById(orderId);
+
+    if (
+      existingOrder &&
+      existingOrder.payment.status === "captured" &&
+      existingOrder.payment.razorpayPaymentId === razorpayPaymentId
+    ) {
+      if (!existingOrder.email.orderConfirmationSent) {
+        await existingOrder.populate("user", "name email");
+
+        await orderConfirmationEmail(existingOrder);
+
+        existingOrder.email.orderConfirmationSent = true;
+
+        await existingOrder.save();
+      }
+
+      return existingOrder;
+    }
+
+    const err = new Error("PAYMENT_ID_MISMATCH");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!updatedOrder.email.orderConfirmationSent) {
+    await updatedOrder.populate("user", "name email");
+
+    await orderConfirmationEmail(updatedOrder);
+
+    updatedOrder.email.orderConfirmationSent = true;
+
+    await updatedOrder.save();
+  }
+
+  return updatedOrder;
+};
+
+//* Payment Failed email sender
+const handlePaymentFailed = async (order) => {
+  if (order.payment.status === "failed") {
+    return order;
+  }
+
+  order.payment.status = "failed";
+
+  await order.save();
+
+  await order.populate("user", "name email");
+
+  await paymentFailureEmail(order);
+
+  return order;
 };
 
 //* POST(/:id/payment/refund)
@@ -116,4 +180,10 @@ const refundPayment = async (orderId, userId) => {
   return order;
 };
 
-export { createRazorpayOrder, verifyRazorpayPayment, refundPayment };
+export {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  refundPayment,
+  handlePaymentCaptured,
+  handlePaymentFailed,
+};

@@ -1,5 +1,10 @@
 import crypto from "crypto";
 import Order from "../models/Orders.js";
+import {
+  handlePaymentCaptured,
+  handlePaymentFailed,
+} from "./paymentServices.js";
+import ProcessedWebhook from "../models/processedWebhook.js";
 
 const verifyRazorpayWebhook = (rawBody, signature) => {
   const generatedSignature = crypto
@@ -11,7 +16,47 @@ const verifyRazorpayWebhook = (rawBody, signature) => {
 };
 
 const processRazorpayWebhook = async (event) => {
-  if (event.event !== "payment.captured") {
+  if (event.event !== "payment.captured" && event.event !== "payment.failed") {
+    return;
+  }
+
+  const eventId = event.id;
+
+  if (!eventId) {
+    const err = new Error("WEBHOOK_EVENT_ID_MISSING");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  let processedEvent;
+
+  try {
+    processedEvent = await ProcessedWebhook.findOneAndUpdate(
+      {
+        eventId,
+        provider: "razorpay",
+      },
+      {
+        $setOnInsert: {
+          eventId,
+          provider: "razorpay",
+          processedAt: new Date(),
+        },
+      },
+      {
+        upsert: true,
+        returnDocument: "before",
+      },
+    );
+  } catch (err) {
+    if (err.code === 11000) {
+      return;
+    }
+
+    throw err;
+  }
+
+  if (processedEvent) {
     return;
   }
 
@@ -25,23 +70,16 @@ const processRazorpayWebhook = async (event) => {
   });
 
   if (!order) {
-    throw new Error("ORDER_NOT_FOUND");
+    const err = new Error("ORDER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
   }
 
-  if (order.payment.status === "captured") {
-    if (order.payment.razorpayPaymentId === razorpayPaymentId) {
-      return order;
-    }
-
-    throw new Error("PAYMENT_ID_MISMATCH");
+  if (event.event === "payment.failed") {
+    return await handlePaymentFailed(order);
   }
 
-  order.payment.status = "captured";
-  order.payment.razorpayPaymentId = razorpayPaymentId;
-
-  await order.save();
-
-  return order;
+  return await handlePaymentCaptured(order._id, razorpayPaymentId);
 };
 
 export { verifyRazorpayWebhook, processRazorpayWebhook };

@@ -5,7 +5,17 @@ import mongoose from "mongoose";
 import { createRazorpayOrder } from "./paymentServices.js";
 
 //* POST(/)
-const userOrder = async (userId) => {
+const userOrder = async (userId, idempotencyKey) => {
+  const existingOrder = await Order.findOne({
+    user: userId,
+    idempotencyKey,
+  });
+
+  if (existingOrder) {
+    await existingOrder.populate("user", "name email");
+    return existingOrder;
+  }
+
   const session = await mongoose.startSession();
 
   try {
@@ -61,6 +71,7 @@ const userOrder = async (userId) => {
         [
           {
             user: userId,
+            idempotencyKey,
             products: orderArray,
             totalPrice: totalPrice,
           },
@@ -87,6 +98,20 @@ const userOrder = async (userId) => {
     await order.populate("user", "name email");
 
     return order;
+  } catch (err) {
+    if (err.code === 11000 && err.keyPattern?.idempotencyKey) {
+      const existingOrder = await Order.findOne({
+        user: userId,
+        idempotencyKey,
+      });
+
+      if (existingOrder) {
+        await existingOrder.populate("user", "name email");
+        return existingOrder;
+      }
+    }
+
+    throw err;
   } finally {
     await session.endSession();
   }

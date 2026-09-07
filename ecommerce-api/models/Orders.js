@@ -7,6 +7,13 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
 
+  idempotencyKey: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
+  },
+
   products: [
     {
       product: {
@@ -62,6 +69,13 @@ const orderSchema = new mongoose.Schema({
 
     razorpayPaymentId: {
       type: String,
+    },
+  },
+
+  email: {
+    orderConfirmationSent: {
+      type: Boolean,
+      default: false,
     },
   },
 });
