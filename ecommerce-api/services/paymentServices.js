@@ -1,10 +1,13 @@
 import crypto from "crypto";
+import mongoose from "mongoose";
 
+import Product from "../models/Product.js";
 import Order from "../models/Orders.js";
 import razorpay from "../config/razorpay.js";
 import {
   orderConfirmationEmail,
   paymentFailureEmail,
+  queueEmail,
 } from "./emailServices.js";
 
 //* Razorpay Order creation
@@ -85,6 +88,7 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
       $set: {
         "payment.status": "captured",
         "payment.razorpayPaymentId": razorpayPaymentId,
+        "inventory.status": "allocated",
       },
     },
     {
@@ -100,12 +104,14 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
       existingOrder.payment.status === "captured" &&
       existingOrder.payment.razorpayPaymentId === razorpayPaymentId
     ) {
-      if (!existingOrder.email.orderConfirmationSent) {
-        await existingOrder.populate("user", "name email");
+      await existingOrder.populate("user", "name, email");
 
-        await orderConfirmationEmail(existingOrder);
+      if (!existingOrder.email.orderConfirmationQueued) {
+        const email = await orderConfirmationEmail(existingOrder);
 
-        existingOrder.email.orderConfirmationSent = true;
+        await queueEmail(email.to, email.subject, email.html);
+
+        existingOrder.email.orderConfirmationQueued = true;
 
         await existingOrder.save();
       }
@@ -118,12 +124,14 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
     throw err;
   }
 
-  if (!updatedOrder.email.orderConfirmationSent) {
-    await updatedOrder.populate("user", "name email");
+  await updatedOrder.populate("user", "name email");
 
-    await orderConfirmationEmail(updatedOrder);
+  if (!updatedOrder.email.orderConfirmationQueued) {
+    const email = await orderConfirmationEmail(updatedOrder);
 
-    updatedOrder.email.orderConfirmationSent = true;
+    await queueEmail(email.to, email.subject, email.html);
+
+    updatedOrder.email.orderConfirmationQueued = true;
 
     await updatedOrder.save();
   }
@@ -133,19 +141,67 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
 
 //* Payment Failed email sender
 const handlePaymentFailed = async (order) => {
-  if (order.payment.status === "failed") {
-    return order;
+  const session = await mongoose.startSession();
+
+  try {
+    let shouldSendEmail = false;
+
+    const updatedOrder = await session.withTransaction(async () => {
+      const currentOrder = await Order.findById(order._id).session(session);
+
+      if (!currentOrder) {
+        const err = new Error("ORDER_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      if (
+        currentOrder.payment.status === "captured" ||
+        currentOrder.payment.status === "refunded"
+      ) {
+        return currentOrder;
+      }
+
+      if (currentOrder.payment.status === "failed") {
+        return currentOrder;
+      }
+
+      if (currentOrder.inventory.status === "reserved") {
+        for (let i = 0; i < currentOrder.products.length; i++) {
+          await Product.findByIdAndUpdate(
+            currentOrder.products[i].product,
+            {
+              $inc: {
+                stock: currentOrder.products[i].quantity,
+              },
+            },
+            { session },
+          );
+        }
+
+        currentOrder.inventory.status = "released";
+      }
+
+      currentOrder.payment.status = "failed";
+
+      shouldSendEmail = true;
+
+      await currentOrder.save({ session });
+
+      return currentOrder;
+    });
+
+    if (shouldSendEmail) {
+      await updatedOrder.populate("user", "name email");
+
+      const email = await paymentFailureEmail(updatedOrder);
+      await queueEmail(email.to, email.subject, email.html);
+    }
+
+    return updatedOrder;
+  } finally {
+    await session.endSession();
   }
-
-  order.payment.status = "failed";
-
-  await order.save();
-
-  await order.populate("user", "name email");
-
-  await paymentFailureEmail(order);
-
-  return order;
 };
 
 //* POST(/:id/payment/refund)

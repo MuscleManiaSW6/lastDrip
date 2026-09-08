@@ -2,6 +2,8 @@ import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./config/DB.js";
 
+import { processEmailJobs } from "./workers/emailWorker.js";
+
 const port = process.env.PORT || 3000;
 
 const startServer = async () => {
@@ -11,6 +13,12 @@ const startServer = async () => {
     app.listen(port, () => {
       console.log(`Server running at ${port}`);
     });
+
+    setInterval(() => {
+      processEmailJobs().catch((err) => {
+        console.error("Email worker error", err);
+      });
+    }, 5000);
   } catch (err) {
     console.log(err);
   }

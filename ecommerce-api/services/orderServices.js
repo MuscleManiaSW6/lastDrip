@@ -4,6 +4,55 @@ import Cart from "../models/Cart.js";
 import mongoose from "mongoose";
 import { createRazorpayOrder } from "./paymentServices.js";
 
+const releaseInventory = async (order, session) => {
+  if (order.inventory.status === "released") {
+    return;
+  }
+
+  for (let i = 0; i < order.products.length; i++) {
+    await Product.findByIdAndUpdate(
+      order.products[i].product,
+      {
+        $inc: {
+          stock: order.products[i].quantity,
+        },
+      },
+      { session },
+    );
+  }
+
+  order.inventory.status = "released";
+
+  await order.save({ session });
+};
+
+const releaseOrderInventory = async (orderId) => {
+  const session = await mongoose.startSession();
+
+  try {
+    let releasedOrder;
+
+    await session.withTransaction(async () => {
+      const order = await Order.findById(orderId).session(session);
+
+      if (!order) {
+        const err = new Error("ORDER_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      // Inventory has already been released.
+      await releaseInventory(order, session);
+
+      releasedOrder = order;
+    });
+
+    return releasedOrder;
+  } finally {
+    await session.endSession();
+  }
+};
+
 //* POST(/)
 const userOrder = async (userId, idempotencyKey) => {
   const existingOrder = await Order.findOne({
@@ -74,6 +123,9 @@ const userOrder = async (userId, idempotencyKey) => {
             idempotencyKey,
             products: orderArray,
             totalPrice: totalPrice,
+            inventory: {
+              status: "reserved",
+            },
           },
         ],
         { session },
@@ -86,10 +138,21 @@ const userOrder = async (userId, idempotencyKey) => {
       return newOrder;
     });
 
-    const razorpayOrder = await createRazorpayOrder(
-      order.totalPrice,
-      order._id.toString(),
-    );
+    let razorpayOrder;
+
+    try {
+      razorpayOrder = await createRazorpayOrder(
+        order.totalPrice,
+        order._id.toString(),
+      );
+    } catch (err) {
+      await releaseOrderInventory(order._id);
+
+      order.status = "cancelled";
+      await order.save();
+
+      throw err;
+    }
 
     order.payment.razorpayOrderId = razorpayOrder.id;
 
@@ -211,15 +274,7 @@ const cancelOrder = async (orderId, userId) => {
         throw error;
       }
 
-      for (const item of order.products) {
-        await Product.findByIdAndUpdate(
-          item.product,
-          {
-            $inc: { stock: item.quantity },
-          },
-          { session },
-        );
-      }
+      await releaseInventory(order, session);
 
       order.status = "cancelled";
       await order.save({ session });
@@ -244,4 +299,5 @@ export {
   getAllUserOrder,
   updateStatus,
   cancelOrder,
+  releaseOrderInventory,
 };

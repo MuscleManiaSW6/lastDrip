@@ -73,9 +73,17 @@ const orderSchema = new mongoose.Schema({
   },
 
   email: {
-    orderConfirmationSent: {
+    orderConfirmationQueued: {
       type: Boolean,
       default: false,
+    },
+  },
+
+  inventory: {
+    status: {
+      type: String,
+      enum: ["reserved", "allocated", "released"],
+      default: "reserved",
     },
   },
 });

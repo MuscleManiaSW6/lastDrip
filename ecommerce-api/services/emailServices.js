@@ -1,5 +1,6 @@
 import resend from "../config/resend.js";
 import { retry } from "../utils/retry.js";
+import EmailJob from "../models/EmailJob.js";
 
 const sendEmail = async (to, subject, html) => {
   return await retry(async () => {
@@ -17,6 +18,14 @@ const sendEmail = async (to, subject, html) => {
     }
 
     return data;
+  });
+};
+
+const queueEmail = async (to, subject, html) => {
+  return await EmailJob.create({
+    to,
+    subject,
+    html,
   });
 };
 
@@ -45,11 +54,11 @@ const orderConfirmationEmail = async (order) => {
   <p>Your payment has been successfully received and your order is now confirmed.</p>
   `;
 
-  return await sendEmail(
-    order.user.email,
-    "lastDrip - Order Confirmation",
+  return {
+    to: order.user.email,
+    subject: "lastDrip - Order Confirmation",
     html,
-  );
+  };
 };
 
 const paymentFailureEmail = async (order) => {
@@ -65,11 +74,20 @@ const paymentFailureEmail = async (order) => {
   <p><strong>Order ID:</strong>${order._id}</p>
 
   <ul>
-  ${order.products.map((item) => `<li>${item.name} x ${item.quantity} - Rs${item.price * item.quantity}</li>`).join("")}
+  ${order.products
+    .map(
+      (item) =>
+        `<li>${item.name} x ${item.quantity} - Rs${item.price * item.quantity}</li>`,
+    )
+    .join("")}
   </ul>
   `;
 
-  return await sendEmail(order.user.email, "lastDrip - Payment Failed", html);
+  return {
+    to: order.user.email,
+    subject: "lastDrip - Payment Failed",
+    html,
+  };
 };
 
-export { sendEmail, orderConfirmationEmail, paymentFailureEmail };
+export { sendEmail, orderConfirmationEmail, paymentFailureEmail, queueEmail };
