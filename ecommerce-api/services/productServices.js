@@ -2,30 +2,62 @@ import Product from "../models/Product.js";
 import mongoose from "mongoose";
 
 //* GET(/)
-const getAllProducts = async (page, limit, sort) => {
+const getAllProducts = async (page, limit, sort, name, price, id) => {
   const skip = (page - 1) * limit;
-  const total = await Product.countDocuments();
-  const totalPages = Math.ceil(total / limit);
-  const product = await Product.find().sort(sort).skip(skip).limit(limit);
-  const prodInfo = {
-    page: Number(page),
-    limit: Number(limit),
-    total: Number(total),
-    totalPages: Number(totalPages),
-    products: product,
+
+  const filter = {
+    isActive: true,
   };
 
-  return prodInfo;
+  if (name) {
+    filter.name = {
+      $regex: name,
+      $options: "i",
+    };
+  }
+
+  if (price) {
+    filter.price = Number(price);
+  }
+
+  if (id) {
+    if (!mongoose.isValidObjectId(id)) {
+      return null;
+    }
+
+    filter._id = id;
+  }
+
+  const total = await Product.countDocuments(filter);
+  const totalPages = Math.ceil(total / limit);
+
+  const products = await Product.find(filter)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+  return {
+    page: Number(page),
+    limit: Number(limit),
+    total,
+    totalPages,
+    products,
+  };
 };
 
 //* GET(/:id)
 const getById = (id) => {
-  return Product.findById(id);
+  return Product.findOne({
+    _id: id,
+    isActive: true,
+  });
 };
 
 //* GET(/search)
 const searchProduct = (name, price, id) => {
-  const filter = {};
+  const filter = {
+    isActive: true,
+  };
 
   if (name) {
     filter.name = {
@@ -50,25 +82,43 @@ const searchProduct = (name, price, id) => {
 };
 
 //* POST(/)
-const createProduct = (name, price, description, category, stock) => {
+const createProduct = (
+  name,
+  price,
+  description,
+  category,
+  variants,
+  images,
+) => {
   const newProduct = {
-    name: name,
+    name,
     price: Number(price),
-    description: description,
-    category: category,
-    stock: Number(stock),
+    description,
+    category,
+    variants,
+    images,
   };
+
   return Product.create(newProduct);
 };
 
 //* PUT(/:id)
-const replaceProduct = (name, price, description, category, stock, id) => {
+const replaceProduct = (
+  name,
+  price,
+  description,
+  category,
+  variants,
+  images,
+  id,
+) => {
   const newProduct = {
-    name: name,
-    price: price,
-    description: description,
-    category: category,
-    stock: stock,
+    name,
+    price,
+    description,
+    category,
+    variants,
+    images,
   };
 
   return Product.findByIdAndUpdate(id, newProduct, {
@@ -78,7 +128,16 @@ const replaceProduct = (name, price, description, category, stock, id) => {
 };
 
 //* PATCH(/:id)
-const updateProduct = (name, price, description, category, stock, id) => {
+const updateProduct = (
+  name,
+  price,
+  description,
+  category,
+  variants,
+  images,
+  isActive,
+  id,
+) => {
   const update = {};
 
   if (name !== undefined) {
@@ -97,8 +156,16 @@ const updateProduct = (name, price, description, category, stock, id) => {
     update.category = category;
   }
 
-  if (stock !== undefined) {
-    update.stock = stock;
+  if (variants !== undefined) {
+    update.variants = variants;
+  }
+
+  if (images !== undefined) {
+    update.images = images;
+  }
+
+  if (isActive !== undefined) {
+    update.isActive = isActive;
   }
 
   return Product.findByIdAndUpdate(id, update, {

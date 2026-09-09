@@ -9,7 +9,7 @@ const getCart = async (userId) => {
     return null;
   }
 
-  await userCart.populate("items.product", "name price category");
+  await userCart.populate("items.product", "name price category variants");
 
   return userCart;
 };
@@ -22,9 +22,32 @@ const addToCart = async (userId, products) => {
     const product = await Product.findById(products[i].product);
 
     if (!product) {
-      throw new Error("PRODUCT_NOT_FOUND");
+      const err = new Error("PRODUCT_NOT_FOUND");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (!product.isActive) {
+      const err = new Error("PRODUCT_NOT_AVAILABLE");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const variant = product.variants.id(products[i].variantId);
+
+    if (!variant) {
+      const err = new Error("VARIANT_NOT_FOUND");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (variant.stock < products[i].quantity) {
+      const err = new Error("INSUFFICIENT_STOCK");
+      err.statusCode = 400;
+      throw err;
     }
   }
+
   if (!userCart) {
     userCart = await Cart.create({
       user: userId,
@@ -36,10 +59,21 @@ const addToCart = async (userId, products) => {
 
   for (let i = 0; i < products.length; i++) {
     const existingItem = userCart.items.find(
-      (item) => item.product.toString() === products[i].product.toString(),
+      (item) =>
+        item.product.toString() === products[i].product.toString() &&
+        item.variantId.toString() === products[i].variantId.toString(),
     );
 
     if (existingItem) {
+      const product = await Product.findById(products[i].product);
+      const variant = product.variants.id(products[i].variantId);
+
+      if (variant.stock < existingItem.quantity + products[i].quantity) {
+        const err = new Error("INSUFFICIENT_STOCK");
+        err.statusCode = 400;
+        throw err;
+      }
+
       existingItem.quantity += products[i].quantity;
     } else {
       userCart.items.push(products[i]);
@@ -52,8 +86,8 @@ const addToCart = async (userId, products) => {
 };
 
 //* PATCH (/cart/items/:productId)
-const updateCart = async (userId, productId, quantity) => {
-  let userCart = await Cart.findOne({ user: userId });
+const updateCart = async (userId, productId, variantId, quantity) => {
+  const userCart = await Cart.findOne({ user: userId });
 
   if (!userCart) {
     const err = new Error("EMPTY_CART");
@@ -62,12 +96,36 @@ const updateCart = async (userId, productId, quantity) => {
   }
 
   const existingItem = userCart.items.find(
-    (item) => item.product.toString() === productId.toString(),
+    (item) =>
+      item.product.toString() === productId.toString() &&
+      item.variantId.toString() === variantId.toString(),
   );
 
   if (!existingItem) {
     const err = new Error("ITEM_NOT_FOUND");
     err.statusCode = 404;
+    throw err;
+  }
+
+  const product = await Product.findById(productId);
+
+  if (!product || !product.isActive) {
+    const err = new Error("PRODUCT_NOT_AVAILABLE");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const variant = product.variants.id(variantId);
+
+  if (!variant) {
+    const err = new Error("VARIANT_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (variant.stock < quantity) {
+    const err = new Error("INSUFFICIENT_STOCK");
+    err.statusCode = 400;
     throw err;
   }
 
@@ -79,8 +137,8 @@ const updateCart = async (userId, productId, quantity) => {
 };
 
 //* DELETE (/cart/items/:productId)
-const removeFromCart = async (userId, productId) => {
-  let userCart = await Cart.findOne({ user: userId });
+const removeFromCart = async (userId, productId, variantId) => {
+  const userCart = await Cart.findOne({ user: userId });
 
   if (!userCart) {
     const err = new Error("EMPTY_CART");
@@ -89,7 +147,9 @@ const removeFromCart = async (userId, productId) => {
   }
 
   const existingItem = userCart.items.find(
-    (item) => item.product.toString() === productId.toString(),
+    (item) =>
+      item.product.toString() === productId.toString() &&
+      item.variantId.toString() === variantId.toString(),
   );
 
   if (!existingItem) {
@@ -99,7 +159,11 @@ const removeFromCart = async (userId, productId) => {
   }
 
   userCart.items = userCart.items.filter(
-    (item) => item.product.toString() !== productId.toString(),
+    (item) =>
+      !(
+        item.product.toString() === productId.toString() &&
+        item.variantId.toString() === variantId.toString()
+      ),
   );
 
   await userCart.save();

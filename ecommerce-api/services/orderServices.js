@@ -1,7 +1,10 @@
 import Order from "../models/Orders.js";
 import Product from "../models/Product.js";
 import Cart from "../models/Cart.js";
+import User from "../models/User.js";
+
 import mongoose from "mongoose";
+
 import { createRazorpayOrder } from "./paymentServices.js";
 
 const releaseInventory = async (order, session) => {
@@ -10,11 +13,14 @@ const releaseInventory = async (order, session) => {
   }
 
   for (let i = 0; i < order.products.length; i++) {
-    await Product.findByIdAndUpdate(
-      order.products[i].product,
+    await Product.findOneAndUpdate(
+      {
+        _id: order.products[i].product,
+        "variants._id": order.products[i].variantId,
+      },
       {
         $inc: {
-          stock: order.products[i].quantity,
+          "variants.$.stock": order.products[i].quantity,
         },
       },
       { session },
@@ -54,7 +60,7 @@ const releaseOrderInventory = async (orderId) => {
 };
 
 //* POST(/)
-const userOrder = async (userId, idempotencyKey) => {
+const userOrder = async (userId, idempotencyKey, addressId) => {
   const existingOrder = await Order.findOne({
     user: userId,
     idempotencyKey,
@@ -69,6 +75,22 @@ const userOrder = async (userId, idempotencyKey) => {
 
   try {
     const order = await session.withTransaction(async () => {
+      const user = await User.findById(userId).session(session);
+
+      if (!user) {
+        const err = new Error("USER_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const address = user.addresses.id(addressId);
+
+      if (!address) {
+        const err = new Error("ADDRESS_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+      }
+
       const cart = await Cart.findOne({ user: userId }).session(session);
 
       if (!cart || cart.items.length === 0) {
@@ -91,13 +113,31 @@ const userOrder = async (userId, idempotencyKey) => {
           throw err;
         }
 
+        const variant = product.variants.id(cart.items[i].variantId);
+
+        if (!variant) {
+          const err = new Error("VARIANT_NOT_FOUND");
+          err.statusCode = 404;
+          throw err;
+        }
+
         const updatedProduct = await Product.findOneAndUpdate(
           {
             _id: product._id,
-            stock: { $gte: cart.items[i].quantity },
+            "variants._id": cart.items[i].variantId,
+            "variants.stock": {
+              $gte: cart.items[i].quantity,
+            },
           },
-          { $inc: { stock: -cart.items[i].quantity } },
-          { session },
+          {
+            $inc: {
+              "variants.$.stock": -cart.items[i].quantity,
+            },
+          },
+          {
+            session,
+            returnDocument: "after",
+          },
         );
 
         if (!updatedProduct) {
@@ -108,12 +148,16 @@ const userOrder = async (userId, idempotencyKey) => {
 
         orderArray.push({
           product: product._id,
+          variantId: variant._id,
+          sku: variant.sku,
+          size: variant.size,
+          color: variant.color,
           name: product.name,
-          price: product.price,
+          price: variant.price ?? product.price,
           quantity: cart.items[i].quantity,
         });
 
-        totalPrice += product.price * cart.items[i].quantity;
+        totalPrice += (variant.price ?? product.price) * cart.items[i].quantity;
       }
 
       const [newOrder] = await Order.create(
@@ -122,7 +166,20 @@ const userOrder = async (userId, idempotencyKey) => {
             user: userId,
             idempotencyKey,
             products: orderArray,
+
+            shippingAddress: {
+              fullName: address.fullName,
+              phone: address.phone,
+              addressLine1: address.addressLine1,
+              addressLine2: address.addressLine2,
+              city: address.city,
+              state: address.state,
+              postalCode: address.postalCode,
+              country: address.country,
+            },
+
             totalPrice: totalPrice,
+
             inventory: {
               status: "reserved",
             },
@@ -183,26 +240,27 @@ const userOrder = async (userId, idempotencyKey) => {
 //* GET(/)
 const getUserOrder = async (userId) => {
   return await Order.find({ user: userId })
-    .populate("user", "name email")
-    .populate("products.product", "name price");
+    .select("-user")
+    .sort({ createdAt: -1 });
 };
 
 //* GET(/:id)
 const getUserOrderById = async (orderId, userId) => {
-  return await Order.findOne({ _id: orderId, user: userId })
-    .populate("user", "name email")
-    .populate("products.product", "name price");
+  return await Order.findOne({
+    _id: orderId,
+    user: userId,
+  }).select("-user");
 };
 
 //* GET(/admin)
 const getAllUserOrder = async () => {
   return await Order.find()
     .populate("user", "name email")
-    .populate("products.product", "name price");
+    .sort({ createdAt: -1 });
 };
 
 //* PATCH(/:id/status)
-const updateStatus = async (id, status) => {
+const updateStatus = async (id, status, carrier, trackingNumber) => {
   const order = await Order.findById(id);
 
   if (!order) {
@@ -226,6 +284,22 @@ const updateStatus = async (id, status) => {
   }
 
   order.status = status;
+
+  if (carrier !== undefined) {
+    order.shipping.carrier = carrier;
+  }
+
+  if (trackingNumber !== undefined) {
+    order.shipping.trackingNumber = trackingNumber;
+  }
+
+  if (status === "shipped" && !order.shipping.shippedAt) {
+    order.shipping.shippedAt = new Date();
+  }
+
+  if (status === "delivered" && !order.shipping.deliveredAt) {
+    order.shipping.deliveredAt = new Date();
+  }
 
   await order.save();
 

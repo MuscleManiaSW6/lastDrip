@@ -168,11 +168,14 @@ const handlePaymentFailed = async (order) => {
 
       if (currentOrder.inventory.status === "reserved") {
         for (let i = 0; i < currentOrder.products.length; i++) {
-          await Product.findByIdAndUpdate(
-            currentOrder.products[i].product,
+          await Product.findOneAndUpdate(
+            {
+              _id: currentOrder.products[i].product,
+              "variants._id": currentOrder.products[i].variantId,
+            },
             {
               $inc: {
-                stock: currentOrder.products[i].quantity,
+                "variants.$.stock": currentOrder.products[i].quantity,
               },
             },
             { session },

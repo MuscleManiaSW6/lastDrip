@@ -1,4 +1,3 @@
-import Product from "../models/Product.js";
 import {
   createProduct,
   getAllProducts,
@@ -13,7 +12,7 @@ import {
 const getProduct = async (req, res) => {
   const { name, price, id, page = 1, limit = 5, sort } = req.query;
 
-  const product = await getAllProducts(page, limit, sort);
+  const product = await getAllProducts(page, limit, sort, name, price, id);
   return res.status(200).json(product);
 };
 
@@ -46,13 +45,14 @@ const getSearch = async (req, res) => {
 
 //* POST(/)
 const postProduct = async (req, res) => {
-  const { name, price, description, category, stock } = req.body;
+  const { name, price, description, category, variants, images } = req.body;
   const product = await createProduct(
     name,
     price,
     description,
     category,
-    stock,
+    variants,
+    images,
   );
 
   res.status(201).json(product);
@@ -61,13 +61,14 @@ const postProduct = async (req, res) => {
 //* PUT(/:id)
 const putProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, price, description, category, stock } = req.body;
+  const { name, price, description, category, variants, images } = req.body;
   const product = await replaceProduct(
     name,
     price,
     description,
     category,
-    stock,
+    variants,
+    images,
     id,
   );
 
@@ -81,13 +82,16 @@ const putProduct = async (req, res) => {
 //* PATCH(/:id)
 const patchProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, price, description, category, stock } = req.body;
+  const { name, price, description, category, variants, images, isActive } =
+    req.body;
   const product = await updateProduct(
     name,
     price,
     description,
     category,
-    stock,
+    variants,
+    images,
+    isActive,
     id,
   );
 

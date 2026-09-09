@@ -10,6 +10,7 @@ import {
 //* POST(/)
 const orderProduct = async (req, res) => {
   const { userId } = req.user;
+  const { addressId } = req.body;
   const idempotencyKey = req.headers["idempotency-key"];
 
   if (!idempotencyKey) {
@@ -18,7 +19,13 @@ const orderProduct = async (req, res) => {
     throw err;
   }
 
-  const order = await userOrder(userId, idempotencyKey);
+  if (!addressId) {
+    const err = new Error("ADDRESS_ID_REQUIRED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const order = await userOrder(userId, idempotencyKey, addressId);
 
   return res.status(201).json(order);
 };
@@ -60,9 +67,9 @@ const getAllOrders = async (req, res) => {
 //* PATCH(/:id/status)
 const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, carrier, trackingNumber } = req.body;
 
-  const updated = await updateStatus(id, status);
+  const updated = await updateStatus(id, status, carrier, trackingNumber);
 
   if (!updated) {
     return res.status(404).json({ message: "Order not found" });

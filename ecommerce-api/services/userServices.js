@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 //* POST(/register)
-const register = async (name, email, password) => {
+const register = async (name, email, password, phone) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -16,6 +16,7 @@ const register = async (name, email, password) => {
     name,
     email,
     password: hashedPassword,
+    phone,
   });
 
   return user;
@@ -50,4 +51,158 @@ const login = async (email, password) => {
   return token;
 };
 
-export { register, login };
+//* GET ("/me")
+const getCurrentUser = async (userId) => {
+  const user = await User.findById(userId).select("-password");
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user;
+};
+
+//* PATCH ("/me")
+const updateProfile = async (userId, name, phone) => {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name, phone },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    },
+  ).select("-password");
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user;
+};
+
+//* GET ("/addresses")
+const getAddresses = async (userId) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user.addresses;
+};
+
+//* POST ("/addresses")
+const addAddress = async (userId, addressData) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (addressData.isDefault) {
+    for (let i = 0; i < user.addresses.length; i++) {
+      user.addresses[i].isDefault = false;
+    }
+  }
+
+  if (user.addresses.length === 0) {
+    addressData.isDefault = true;
+  }
+
+  user.addresses.push(addressData);
+
+  await user.save();
+
+  return user.addresses[user.addresses.length - 1];
+};
+
+//* PATCH ("/addresses/:id")
+const updateAddress = async (userId, addressId, addressData) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const address = user.addresses.id(addressId);
+
+  if (!address) {
+    const err = new Error("ADDRESS_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (addressData.isDefault === true) {
+    for (let i = 0; i < user.addresses.length; i++) {
+      user.addresses[i].isDefault = false;
+    }
+  }
+
+  if (
+    address.isDefault &&
+    addressData.isDefault === false &&
+    user.addresses.length > 1
+  ) {
+    const err = new Error("DEFAULT_ADDRESS_REQUIRED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  Object.assign(address, addressData);
+
+  await user.save();
+
+  return address;
+};
+
+//* DELETE ("/addresses/:id")
+const deleteAddress = async (userId, addressId) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const address = user.addresses.id(addressId);
+
+  if (!address) {
+    const err = new Error("ADDRESS_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const wasDefault = address.isDefault;
+
+  address.deleteOne();
+
+  if (wasDefault && user.addresses.length > 0) {
+    user.addresses[0].isDefault = true;
+  }
+
+  await user.save();
+
+  return user.addresses;
+};
+
+export {
+  register,
+  login,
+  getCurrentUser,
+  updateProfile,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  getAddresses,
+};

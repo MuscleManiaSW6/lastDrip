@@ -33,9 +33,9 @@ const addCartItem = async (req, res) => {
 const updateCartItem = async (req, res) => {
   const { userId } = req.user;
   const { productId } = req.params;
-  const { quantity } = req.body;
+  const { variantId, quantity } = req.body;
 
-  const cart = await updateCart(userId, productId, quantity);
+  const cart = await updateCart(userId, productId, variantId, quantity);
 
   return res.status(200).json(cart);
 };
@@ -44,8 +44,9 @@ const updateCartItem = async (req, res) => {
 const removeCartItem = async (req, res) => {
   const { userId } = req.user;
   const { productId } = req.params;
+  const { variantId } = req.body;
 
-  const cart = await removeFromCart(userId, productId);
+  const cart = await removeFromCart(userId, productId, variantId);
 
   return res.status(200).json(cart);
 };
