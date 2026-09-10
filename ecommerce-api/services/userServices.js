@@ -220,17 +220,25 @@ const getUserById = async (userId) => {
 
 //* PATCH (/admin/:id/status)
 const updateUserStatus = async (userId, status) => {
+  const existingUser = await User.findById(userId);
+
+  if (!existingUser) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (existingUser.role === "admin" && status === "blocked") {
+    const err = new Error("Admin accounts cannot be blocked");
+    err.statusCode = 403;
+    throw err;
+  }
+
   const user = await User.findByIdAndUpdate(
     userId,
     { status: status },
     { returnDocument: "after", runValidators: true },
   ).select("-password");
-
-  if (!user) {
-    const err = new Error("USER_NOT_FOUND");
-    err.statusCode = 404;
-    throw err;
-  }
 
   return user;
 };

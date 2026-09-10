@@ -220,8 +220,12 @@ const userOrder = async (userId, idempotencyKey, addressId) => {
     } catch (err) {
       await releaseOrderInventory(order._id);
 
-      order.status = "cancelled";
-      await order.save();
+      const cancelledOrder = await Order.findById(order._id);
+
+      if (cancelledOrder) {
+        cancelledOrder.status = "cancelled";
+        await cancelledOrder.save();
+      }
 
       throw err;
     }

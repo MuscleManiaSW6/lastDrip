@@ -4,6 +4,8 @@ import authenticateUser from "../middlewares/authenticateToken.js";
 import authorizeAdmin from "../middlewares/authorizeAdmin.js";
 import validateRequest from "../middlewares/validateRequest.js";
 
+import { authLimiter } from "../middlewares/rateLimiters.js";
+
 import {
   addressSchema,
   loginSchema,
@@ -12,6 +14,8 @@ import {
   updateCustomerStatusSchema,
   updateProfileSchema,
 } from "../middlewares/requestSchemas.js";
+
+import validateObjectId from "../middlewares/validateProductId.js";
 
 import {
   userRegister,
@@ -26,12 +30,16 @@ import {
   adminCustomerById,
   updateCustomerStatus,
 } from "../controllers/userController.js";
-import validateObjectId from "../middlewares/validateProductId.js";
 
 const router = express.Router();
 
-router.post("/register", validateRequest(registerSchema), userRegister);
-router.post("/login", validateRequest(loginSchema), userLogin);
+router.post(
+  "/register",
+  authLimiter,
+  validateRequest(registerSchema),
+  userRegister,
+);
+router.post("/login", authLimiter, validateRequest(loginSchema), userLogin);
 
 router.get("/me", authenticateUser, currentUser);
 router.patch(
