@@ -39,7 +39,7 @@ const orderConfirmationEmail = async (order) => {
 
   <h2>Order Details</h2>
 
-  <p><strong>Order ID: </strong> ${order._id}</p>
+  <p><strong>Order ID: </strong> ${order.orderNumber}</p>
 
   <ul>
     ${order.products

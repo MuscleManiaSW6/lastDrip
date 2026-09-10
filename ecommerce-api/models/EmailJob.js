@@ -34,11 +34,11 @@ const emailJobSchema = mongoose.Schema(
     },
 
     lockedAt: {
-      type: String,
+      type: Date,
     },
 
     lastError: {
-      type: Date,
+      type: String,
     },
   },
 

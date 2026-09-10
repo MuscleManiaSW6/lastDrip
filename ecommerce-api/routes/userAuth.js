@@ -1,6 +1,7 @@
 import express from "express";
 
-import authenticateToken from "../middlewares/authenticateToken.js";
+import authenticateUser from "../middlewares/authenticateToken.js";
+import authorizeAdmin from "../middlewares/authorizeAdmin.js";
 
 import {
   userRegister,
@@ -11,24 +12,31 @@ import {
   addUserAddress,
   updateUserAddress,
   deleteUserAddress,
-} from "../controllers/authController.js";
+  adminCustomers,
+  adminCustomerById,
+  updateCustomerStatus,
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
 router.post("/register", userRegister);
-
 router.post("/login", userLogin);
 
-router.get("/me", authenticateToken, currentUser);
+router.get("/me", authenticateUser, currentUser);
+router.patch("/me", authenticateUser, updateUserProfile);
 
-router.patch("/me", authenticateToken, updateUserProfile);
+router.get("/addresses", authenticateUser, userAddress);
+router.post("/addresses", authenticateUser, addUserAddress);
+router.patch("/addresses/:id", authenticateUser, updateUserAddress);
+router.delete("/addresses/:id", authenticateUser, deleteUserAddress);
 
-router.get("/addresses", authenticateToken, userAddress);
-
-router.post("/addresses", authenticateToken, addUserAddress);
-
-router.patch("/addresses/:id", authenticateToken, updateUserAddress);
-
-router.delete("/addresses/:id", authenticateToken, deleteUserAddress);
+router.get("/admin", authenticateUser, authorizeAdmin, adminCustomers);
+router.get("/admin/:id", authenticateUser, authorizeAdmin, adminCustomerById);
+router.patch(
+  "/admin/:id/status",
+  authenticateUser,
+  authorizeAdmin,
+  updateCustomerStatus,
+);
 
 export default router;

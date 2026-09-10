@@ -17,7 +17,7 @@ app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 
 app.use(express.json());
 
-app.use("/auth", authRouter);
+app.use("/users", authRouter);
 app.use("/products", productRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);

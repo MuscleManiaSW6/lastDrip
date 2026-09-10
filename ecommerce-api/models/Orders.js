@@ -15,6 +15,13 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
 
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+
     products: [
       {
         product: {

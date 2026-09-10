@@ -7,9 +7,12 @@ import {
   getAddresses,
   addAddress,
   deleteAddress,
+  getAllUsers,
+  getUserById,
+  updateUserStatus,
 } from "../services/userServices.js";
 
-//* POST("/register")
+//* POST(/register)
 const userRegister = async (req, res) => {
   const { name, email, password, phone } = req.body;
 
@@ -29,7 +32,7 @@ const userRegister = async (req, res) => {
   });
 };
 
-//* POST("/login")
+//* POST(/login)
 const userLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -42,14 +45,14 @@ const userLogin = async (req, res) => {
   res.status(200).json({ message: "Login successful", token: token });
 };
 
-//* GET ("/me")
+//* GET (/me)
 const currentUser = async (req, res) => {
   const user = await getCurrentUser(req.user.userId);
 
   res.status(200).json({ user });
 };
 
-//* PATCH ("/me")
+//* PATCH (/me)
 const updateUserProfile = async (req, res) => {
   const { name, phone } = req.body;
 
@@ -58,21 +61,21 @@ const updateUserProfile = async (req, res) => {
   res.status(200).json({ message: "Profile updated successfully", user });
 };
 
-//* GET ("/addresses")
+//* GET (/addresses)
 const userAddress = async (req, res) => {
   const addresses = await getAddresses(req.user.userId);
 
   res.status(200).json({ addresses });
 };
 
-//* POST ("/addresses")
+//* POST (/addresses)
 const addUserAddress = async (req, res) => {
   const address = await addAddress(req.user.userId, req.body);
 
   res.status(201).json({ message: "Address added successfully", address });
 };
 
-//* PATCH ("/addresses/:id")
+//* PATCH (/addresses/:id)
 const updateUserAddress = async (req, res) => {
   const address = await updateAddress(req.user.userId, req.params.id, req.body);
 
@@ -82,7 +85,7 @@ const updateUserAddress = async (req, res) => {
   });
 };
 
-//* DELETE ("/addresses/:id")
+//* DELETE (/addresses/:id)
 const deleteUserAddress = async (req, res) => {
   const addresses = await deleteAddress(req.user.userId, req.params.id);
 
@@ -90,6 +93,31 @@ const deleteUserAddress = async (req, res) => {
     message: "Address deleted successfully",
     addresses,
   });
+};
+
+//* GET (/admin)
+const adminCustomers = async (req, res) => {
+  const user = await getAllUsers();
+
+  return res.status(200).json({ user });
+};
+
+//* GET (/admin/:id)
+const adminCustomerById = async (req, res) => {
+  const user = await getUserById(req.params.id);
+
+  return res.status(200).json({ user });
+};
+
+//* PATCH (/admin/:id/status)
+const updateCustomerStatus = async (req, res) => {
+  const { status } = req.body;
+
+  const user = await updateUserStatus(req.params.id, status);
+
+  return res
+    .status(200)
+    .json({ message: "User status updated successfully", user });
 };
 
 export {
@@ -101,4 +129,7 @@ export {
   addUserAddress,
   updateUserAddress,
   deleteUserAddress,
+  adminCustomers,
+  adminCustomerById,
+  updateCustomerStatus,
 };

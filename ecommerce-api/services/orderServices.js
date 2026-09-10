@@ -7,6 +7,14 @@ import mongoose from "mongoose";
 
 import { createRazorpayOrder } from "./paymentServices.js";
 
+const generateOrderNUmber = () => {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+  const randomPart = Math.floor(100000 + Math.random() * 900000);
+
+  return `LD-${date}-${randomPart}`;
+};
+
 const releaseInventory = async (order, session) => {
   if (order.inventory.status === "released") {
     return;
@@ -124,9 +132,13 @@ const userOrder = async (userId, idempotencyKey, addressId) => {
         const updatedProduct = await Product.findOneAndUpdate(
           {
             _id: product._id,
-            "variants._id": cart.items[i].variantId,
-            "variants.stock": {
-              $gte: cart.items[i].quantity,
+            variants: {
+              $elemMatch: {
+                _id: cart.items[i].variantId,
+                stock: {
+                  $gte: cart.items[i].quantity,
+                },
+              },
             },
           },
           {
@@ -165,6 +177,9 @@ const userOrder = async (userId, idempotencyKey, addressId) => {
           {
             user: userId,
             idempotencyKey,
+
+            orderNumber: generateOrderNUmber(),
+
             products: orderArray,
 
             shippingAddress: {

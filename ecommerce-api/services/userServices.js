@@ -30,6 +30,10 @@ const login = async (email, password) => {
     return null;
   }
 
+  if (user.status === "blocked") {
+    return null;
+  }
+
   const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
   if (!isPasswordCorrect) {
@@ -51,7 +55,7 @@ const login = async (email, password) => {
   return token;
 };
 
-//* GET ("/me")
+//* GET (/me)
 const getCurrentUser = async (userId) => {
   const user = await User.findById(userId).select("-password");
 
@@ -64,7 +68,7 @@ const getCurrentUser = async (userId) => {
   return user;
 };
 
-//* PATCH ("/me")
+//* PATCH (/me)
 const updateProfile = async (userId, name, phone) => {
   const user = await User.findByIdAndUpdate(
     userId,
@@ -84,7 +88,7 @@ const updateProfile = async (userId, name, phone) => {
   return user;
 };
 
-//* GET ("/addresses")
+//* GET (/addresses)
 const getAddresses = async (userId) => {
   const user = await User.findById(userId);
 
@@ -97,7 +101,7 @@ const getAddresses = async (userId) => {
   return user.addresses;
 };
 
-//* POST ("/addresses")
+//* POST (/addresses)
 const addAddress = async (userId, addressData) => {
   const user = await User.findById(userId);
 
@@ -124,7 +128,7 @@ const addAddress = async (userId, addressData) => {
   return user.addresses[user.addresses.length - 1];
 };
 
-//* PATCH ("/addresses/:id")
+//* PATCH (/addresses/:id)
 const updateAddress = async (userId, addressId, addressData) => {
   const user = await User.findById(userId);
 
@@ -165,7 +169,7 @@ const updateAddress = async (userId, addressId, addressData) => {
   return address;
 };
 
-//* DELETE ("/addresses/:id")
+//* DELETE (/addresses/:id)
 const deleteAddress = async (userId, addressId) => {
   const user = await User.findById(userId);
 
@@ -196,13 +200,51 @@ const deleteAddress = async (userId, addressId) => {
   return user.addresses;
 };
 
+//* GET (/admin)
+const getAllUsers = async () => {
+  return await User.find().select("-password").sort({ createdAt: -1 });
+};
+
+//* GET (/admin/:id)
+const getUserById = async (userId) => {
+  const user = await User.findById(userId).select("-password");
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user;
+};
+
+//* PATCH (/admin/:id/status)
+const updateUserStatus = async (userId, status) => {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { status: status },
+    { returnDocument: "after", runValidators: true },
+  ).select("-password");
+
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user;
+};
+
 export {
   register,
   login,
   getCurrentUser,
   updateProfile,
+  getAddresses,
   addAddress,
   updateAddress,
   deleteAddress,
-  getAddresses,
+  getAllUsers,
+  getUserById,
+  updateUserStatus,
 };

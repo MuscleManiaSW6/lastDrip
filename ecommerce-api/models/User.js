@@ -32,6 +32,12 @@ const userSchema = mongoose.Schema(
       default: "user",
     },
 
+    status: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+    },
+
     addresses: [
       {
         fullName: {
