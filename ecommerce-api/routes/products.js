@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   deleteProduct,
   getProduct,
@@ -8,20 +9,28 @@ import {
   postProduct,
   putProduct,
 } from "../controllers/productController.js";
+
 import {
   validatePatch,
   validatePost,
   validatePut,
 } from "../middlewares/validateProducts.js";
+
+import validateRequest from "../middlewares/validateRequest.js";
+import {
+  productQuerySchema,
+  productSearchSchema,
+} from "../middlewares/requestSchemas.js";
+
 import validateObjectId from "../middlewares/validateProductId.js";
 import authenticateUser from "../middlewares/authenticateToken.js";
 import authorizeAdmin from "../middlewares/authorizeAdmin.js";
 
 const router = express.Router();
 
-router.get("/", getProduct);
+router.get("/", validateRequest(productQuerySchema), getProduct);
 
-router.get("/search", getSearch);
+router.get("/search", validateRequest(productSearchSchema), getSearch);
 
 router.get("/:id", validateObjectId, getProductId);
 

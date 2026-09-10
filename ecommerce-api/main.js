@@ -1,10 +1,13 @@
 import "dotenv/config";
+
+import { env } from "./config/env.js";
+
 import app from "./app.js";
 import connectDB from "./config/DB.js";
 
 import { processEmailJobs } from "./workers/emailWorker.js";
 
-const port = process.env.PORT || 3000;
+const port = env.PORT || 3000;
 
 const startServer = async () => {
   try {

@@ -12,10 +12,6 @@ const verifyPayment = async (req, res) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
     req.body;
 
-  console.log("PARAM ORDER ID:", id);
-  console.log("AUTH USER:", userId);
-  console.log("BODY:", req.body);
-
   const order = await verifyRazorpayPayment(
     id,
     userId,

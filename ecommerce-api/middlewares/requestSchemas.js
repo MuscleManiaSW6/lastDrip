@@ -152,3 +152,37 @@ export const orderIdSchema = z.object({
   }),
   query: z.object({}),
 });
+
+//* Product Query Schema
+export const productQuerySchema = z.object({
+  body: z.object({}),
+  params: z.object({}),
+  query: z.object({
+    name: z.string().trim().optional(),
+    price: z.coerce.number().positive().optional(),
+    id: objectId.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(5),
+    sort: z
+      .enum([
+        "newest",
+        "oldest",
+        "priceAsc",
+        "priceDesc",
+        "nameAsc",
+        "nameDesc",
+      ])
+      .optional(),
+  }),
+});
+
+//* Product Search Schema
+export const productSearchSchema = z.object({
+  body: z.object({}),
+  params: z.object({}),
+  query: z.object({
+    name: z.string().trim().optional(),
+    price: z.coerce.number().positive().optional(),
+    id: objectId.optional(),
+  }),
+});

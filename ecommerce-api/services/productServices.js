@@ -1,6 +1,19 @@
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
 
+const escapeRegex = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const sortOptions = {
+  newest: { _id: -1 },
+  oldest: { _id: 1 },
+  priceAsc: { price: 1 },
+  priceDesc: { price: -1 },
+  nameAsc: { name: 1 },
+  nameDesc: { name: -1 },
+};
+
 //* GET(/)
 const getAllProducts = async (page, limit, sort, name, price, id) => {
   const skip = (page - 1) * limit;
@@ -11,7 +24,7 @@ const getAllProducts = async (page, limit, sort, name, price, id) => {
 
   if (name) {
     filter.name = {
-      $regex: name,
+      $regex: escapeRegex(name),
       $options: "i",
     };
   }
@@ -31,8 +44,10 @@ const getAllProducts = async (page, limit, sort, name, price, id) => {
   const total = await Product.countDocuments(filter);
   const totalPages = Math.ceil(total / limit);
 
+  const sortQuery = sortOptions[sort] || sortOptions.newest;
+
   const products = await Product.find(filter)
-    .sort(sort)
+    .sort(sortQuery)
     .skip(skip)
     .limit(limit);
 
@@ -61,7 +76,7 @@ const searchProduct = (name, price, id) => {
 
   if (name) {
     filter.name = {
-      $regex: name,
+      $regex: escapeRegex(name),
       $options: "i",
     };
   }

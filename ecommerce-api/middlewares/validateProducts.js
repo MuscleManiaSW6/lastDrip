@@ -46,7 +46,7 @@ const patchSchema = z
     message: "Please provide a field to update",
   });
 
-//* PATCH Schema
+//* POST Schema
 const postSchema = z.object({
   body: z.object({
     name: z.string().trim().min(1, "Invalid product name"),

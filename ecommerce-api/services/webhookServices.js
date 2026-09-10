@@ -1,14 +1,18 @@
 import crypto from "crypto";
+
+import { env } from "../config/env.js";
+
 import Order from "../models/Orders.js";
+import ProcessedWebhook from "../models/processedWebhook.js";
+
 import {
   handlePaymentCaptured,
   handlePaymentFailed,
 } from "./paymentServices.js";
-import ProcessedWebhook from "../models/processedWebhook.js";
 
 const verifyRazorpayWebhook = (rawBody, signature) => {
   const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
+    .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET)
     .update(rawBody)
     .digest("hex");
 

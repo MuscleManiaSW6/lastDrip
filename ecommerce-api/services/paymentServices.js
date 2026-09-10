@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
 
+import { env } from "../config/env.js";
+
 import Product from "../models/Product.js";
 import Order from "../models/Orders.js";
 import razorpay from "../config/razorpay.js";
@@ -52,7 +54,7 @@ const verifyRazorpayPayment = async (
   const body = `${storedRazorpayOrderId}|${razorpayPaymentId}`;
 
   const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .createHmac("sha256", env.RAZORPAY_KEY_SECRET)
     .update(body)
     .digest("hex");
 

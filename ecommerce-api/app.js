@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+
+import { env } from "./config/env.js";
 
 import authRouter from "./routes/userAuth.js";
 import productRouter from "./routes/products.js";
@@ -11,11 +14,17 @@ import errorHandler from "./middlewares/errorhandler.js";
 
 const app = express();
 
-app.use(cors());
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: env.CLIENT_URL || "http://localhost:5173",
+  }),
+);
 
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 app.use("/users", authRouter);
 app.use("/products", productRouter);
