@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+//* Variant Schema
 const variantSchema = z.object({
   sku: z.string().trim().min(1, "Invalid SKU"),
   size: z.string().trim().min(1, "Invalid size"),
@@ -8,8 +9,9 @@ const variantSchema = z.object({
   price: z.number().positive("Invalid variant price").optional(),
 });
 
+//* Image Schema
 const imageSchema = z.object({
-  url: z.string().trim().url("Invalid image URL"),
+  url: z.url("Invalid image URL").trim(),
   alt: z.string().trim().optional(),
 });
 
@@ -44,6 +46,20 @@ const patchSchema = z
     message: "Please provide a field to update",
   });
 
+//* PATCH Schema
+const postSchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1, "Invalid product name"),
+    price: z.number().positive("Invalid product price"),
+    description: z.string().trim().min(1, "Invalid description"),
+    category: z.string().trim().min(1, "Invalid category"),
+    variants: z.array(variantSchema).min(1, "At least one variant is required"),
+    images: z.array(imageSchema).optional(),
+  }),
+  params: z.object({}),
+  query: z.object({}),
+});
+
 //* PUT Validation
 const validatePut = (req, res, next) => {
   const validate = putSchema.safeParse(req.body);
@@ -70,4 +86,17 @@ const validatePatch = (req, res, next) => {
   next();
 };
 
-export { validatePut, validatePatch };
+//* POST Validation
+const validatePost = (req, res, next) => {
+  const validate = postSchema.safeParse(req.body);
+
+  if (!validate.success) {
+    return res.status(400).json({
+      message: validate.error.issues[0].message,
+    });
+  }
+
+  next();
+};
+
+export { validatePut, validatePatch, validatePost };

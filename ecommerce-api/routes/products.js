@@ -8,7 +8,11 @@ import {
   postProduct,
   putProduct,
 } from "../controllers/productController.js";
-import { validatePatch, validatePut } from "../middlewares/validateProducts.js";
+import {
+  validatePatch,
+  validatePost,
+  validatePut,
+} from "../middlewares/validateProducts.js";
 import validateObjectId from "../middlewares/validateProductId.js";
 import authenticateUser from "../middlewares/authenticateToken.js";
 import authorizeAdmin from "../middlewares/authorizeAdmin.js";
@@ -21,7 +25,7 @@ router.get("/search", getSearch);
 
 router.get("/:id", validateObjectId, getProductId);
 
-router.post("/", authenticateUser, authorizeAdmin, postProduct);
+router.post("/", authenticateUser, authorizeAdmin, validatePost, postProduct);
 
 router.put(
   "/:id",

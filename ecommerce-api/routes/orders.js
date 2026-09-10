@@ -2,9 +2,10 @@ import express from "express";
 
 import authenticateUser from "../middlewares/authenticateToken.js";
 import authorizeAdmin from "../middlewares/authorizeAdmin.js";
-
 import validateObjectId from "../middlewares/validateProductId.js";
 import { validateStatus } from "../middlewares/statusValidation.js";
+import validateRequest from "../middlewares/validateRequest.js";
+import { orderSchema } from "../middlewares/requestSchemas.js";
 
 import {
   cancelUserOrder,
@@ -22,7 +23,7 @@ import {
 
 const router = express.Router();
 
-router.post("/", authenticateUser, orderProduct);
+router.post("/", authenticateUser, validateRequest(orderSchema), orderProduct);
 
 router.get("/", authenticateUser, getOrders);
 
