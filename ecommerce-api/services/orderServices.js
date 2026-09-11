@@ -75,6 +75,12 @@ const userOrder = async (userId, idempotencyKey, addressId) => {
   });
 
   if (existingOrder) {
+    if (!existingOrder.payment.razorpayOrderId) {
+      const err = new Error("ORDER_PAYMENT_INITIALIZATION_IN_PROGRESS");
+      err.statusCode = 409;
+      throw err;
+    }
+
     await existingOrder.populate("user", "name email");
     return existingOrder;
   }
@@ -245,6 +251,14 @@ const userOrder = async (userId, idempotencyKey, addressId) => {
       });
 
       if (existingOrder) {
+        if (!existingOrder.payment.razorpayOrderId) {
+          const conflictError = new Error(
+            "ORDER_PAYMENT_INITIALIZATION_IN_PROGRESS",
+          );
+          conflictError.statusCode = 409;
+          throw conflictError;
+        }
+
         await existingOrder.populate("user", "name email");
         return existingOrder;
       }
