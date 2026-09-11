@@ -79,6 +79,38 @@ const canRefundPayment = (paymentStatus) => {
   return paymentStatus === "captured";
 };
 
+const createRazorpayRefund = async (paymentId, amount, idempotencyKey) => {
+  const credentials = Buffer.from(
+    `${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`,
+  ).toString("base64");
+
+  const response = await fetch(
+    `https://api.razorpay.com/v1/payments/${paymentId}/refund`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+        "X-Refund-Idempotency": idempotencyKey,
+      },
+      body: JSON.stringify({ amount }),
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const err = new Error(data?.error?.description || "Razorpay refund failed");
+
+    err.statusCode = response.status >= 500 ? 502 : response.status;
+    err.razorpayStatus = response.status;
+
+    throw err;
+  }
+
+  return data;
+};
+
 //* Order confirmation email sender
 const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
   const updatedOrder = await Order.findOneAndUpdate(
@@ -209,20 +241,64 @@ const handlePaymentFailed = async (order) => {
   }
 };
 
+const handleRefundWebhook = async (refund) => {
+  const order = await Order.findOne({
+    "payment.razorpayPaymentId": refund.payment_id,
+  });
+
+  if (!order) {
+    const err = new Error("ORDER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (
+    order.payment.refund?.razorpayRefundId &&
+    order.payment.refund.razorpayRefundId !== refund.id
+  ) {
+    const err = new Error("REFUND_ID_MISMATCH");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!order.payment.refund) {
+    order.payment.refund = {
+      amount: refund.amount,
+      razorpayRefundId: refund.id,
+    };
+  } else {
+    order.payment.refund.amount = refund.amount;
+    order.payment.refund.razorpayRefundId = refund.id;
+  }
+
+  if (refund.status === "processed") {
+    order.payment.refund.status = "processed";
+    order.payment.status = "refunded";
+  } else if (refund.status === "failed") {
+    order.payment.refund.status = "failed";
+  } else {
+    order.payment.refund.status = "processing";
+  }
+
+  await order.save();
+
+  return order;
+};
+
 //* POST(/:id/payment/refund)
 const refundPayment = async (orderId, userId) => {
   const order = await Order.findOne({ _id: orderId, user: userId });
 
   if (!order) {
-    const error = new Error("ORDER_NOT_FOUND");
-    error.statusCode = 404;
-    throw error;
+    const err = new Error("ORDER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
   }
 
   if (order.status !== "cancelled") {
-    const error = new Error("ORDER_NOT_CANCELLED");
-    error.statusCode = 400;
-    throw error;
+    const err = new Error("ORDER_NOT_CANCELLED");
+    err.statusCode = 400;
+    throw err;
   }
 
   if (order.payment.status === "refunded") {
@@ -230,15 +306,59 @@ const refundPayment = async (orderId, userId) => {
   }
 
   if (!canRefundPayment(order.payment.status)) {
-    const error = new Error("PAYMENT_NOT_REFUNDABLE");
-    error.statusCode = 400;
-    throw error;
+    const err = new Error("PAYMENT_NOT_REFUNDABLE");
+    err.statusCode = 400;
+    throw err;
   }
 
-  order.payment.status = "refunded";
+  if (!order.payment.razorpayPaymentId) {
+    const err = new Error("RAZORPAY_PAYMENT_NOT_FOUND");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const refundAmount = Math.round(order.totalPrice * 100);
+
+  const idempotencyKey = `refund-${order._id.toString()}`;
+
+  order.payment.refund = {
+    status: "processing",
+    amount: refundAmount,
+  };
 
   await order.save();
-  return order;
+
+  try {
+    const refund = await createRazorpayRefund(
+      order.payment.razorpayPaymentId,
+      refundAmount,
+      idempotencyKey,
+    );
+
+    order.payment.refund.razorpayRefundId = refund.id;
+
+    if (refund.status === "processed") {
+      order.payment.status = "refunded";
+      order.payment.refund.status = "processed";
+    } else if (refund.status === "failed") {
+      order.payment.refund.status = "failed";
+    } else {
+      order.payment.refund.status = "processing";
+    }
+
+    await order.save();
+
+    return order;
+  } catch (err) {
+    if (err.razorpayStatus === 409) {
+      const conflictError = new Error("REFUND_ALREADY_PROCESSING");
+      conflictError.statusCode = 409;
+
+      throw conflictError;
+    }
+
+    throw err;
+  }
 };
 
 export {
@@ -247,4 +367,5 @@ export {
   refundPayment,
   handlePaymentCaptured,
   handlePaymentFailed,
+  handleRefundWebhook,
 };

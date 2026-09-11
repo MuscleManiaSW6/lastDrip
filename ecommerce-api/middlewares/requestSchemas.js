@@ -153,6 +153,17 @@ export const orderIdSchema = z.object({
   query: z.object({}),
 });
 
+//* Payment Verification Schema
+export const paymentVerificationSchema = z.object({
+  body: z.object({
+    razorpay_payment_id: z.string().min(1, "Payment ID is required"),
+    razorpay_order_id: z.string().min(1, "Order ID is required"),
+    razorpay_signature: z.string().min(1, "Payment signature is required"),
+  }),
+  params: z.object({}),
+  query: z.object({}),
+});
+
 //* Product Query Schema
 export const productQuerySchema = z.object({
   body: z.object({}),

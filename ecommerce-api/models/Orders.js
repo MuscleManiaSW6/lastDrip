@@ -11,8 +11,6 @@ const orderSchema = new mongoose.Schema(
     idempotencyKey: {
       type: String,
       required: true,
-      unique: true,
-      index: true,
     },
 
     orderNumber: {
@@ -163,6 +161,22 @@ const orderSchema = new mongoose.Schema(
       razorpayPaymentId: {
         type: String,
       },
+
+      refund: {
+        status: {
+          type: String,
+          enum: ["processing", "processed", "failed"],
+        },
+
+        razorpayRefundId: {
+          type: String,
+        },
+
+        amount: {
+          type: Number,
+          min: 1,
+        },
+      },
     },
 
     email: {
@@ -184,6 +198,8 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+orderSchema.index({ user: 1, idempotencyKey: 1 }, { unique: true });
 
 const Order = mongoose.model("Order", orderSchema);
 

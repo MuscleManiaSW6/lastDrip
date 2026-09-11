@@ -7,7 +7,7 @@ import connectDB from "./config/DB.js";
 
 import { processEmailJobs } from "./workers/emailWorker.js";
 
-const port = env.PORT || 3000;
+const port = env.PORT;
 
 const startServer = async () => {
   try {

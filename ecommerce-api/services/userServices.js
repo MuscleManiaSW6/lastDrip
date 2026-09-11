@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+import { env } from "../config/env.js";
+
 //* POST(/register)
 const register = async (name, email, password, phone) => {
   const existingUser = await User.findOne({ email });
@@ -46,7 +48,7 @@ const login = async (email, password) => {
       email: user.email,
       role: user.role,
     },
-    process.env.JWT_SECRET,
+    env.JWT_SECRET,
     {
       expiresIn: "1h",
     },

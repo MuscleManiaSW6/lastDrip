@@ -1,23 +1,37 @@
 import mongoose from "mongoose";
 
-const processedWebhookSchema = new mongoose.Schema({
-  eventId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-  },
+const processedWebhookSchema = new mongoose.Schema(
+  {
+    eventId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
 
-  provider: {
-    type: String,
-    required: true,
-  },
+    provider: {
+      type: String,
+      required: true,
+    },
 
-  processedAt: {
-    type: Date,
-    default: Date.now,
+    status: {
+      type: String,
+      enum: ["processing", "completed", "failed"],
+      default: "processing",
+    },
+
+    processedAt: {
+      type: Date,
+    },
+
+    lastError: {
+      type: String,
+    },
   },
-});
+  {
+    timestamps: true,
+  },
+);
 
 const ProcessedWebhook = mongoose.model(
   "ProcessedWebhook",

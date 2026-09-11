@@ -5,7 +5,10 @@ import authorizeAdmin from "../middlewares/authorizeAdmin.js";
 import validateObjectId from "../middlewares/validateProductId.js";
 import { validateStatus } from "../middlewares/statusValidation.js";
 import validateRequest from "../middlewares/validateRequest.js";
-import { orderSchema } from "../middlewares/requestSchemas.js";
+import {
+  orderSchema,
+  paymentVerificationSchema,
+} from "../middlewares/requestSchemas.js";
 import { paymentLimiter } from "../middlewares/rateLimiters.js";
 
 import {
@@ -54,6 +57,7 @@ router.post(
   paymentLimiter,
   validateObjectId,
   authenticateUser,
+  validateRequest(paymentVerificationSchema),
   verifyPayment,
 );
 
