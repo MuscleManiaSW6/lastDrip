@@ -122,13 +122,18 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
       $set: {
         "payment.status": "captured",
         "payment.razorpayPaymentId": razorpayPaymentId,
-        "inventory.status": "allocated",
       },
     },
     {
       returnDocument: "after",
     },
   );
+
+  if (updatedOrder && updatedOrder.inventory.status === "reserved") {
+    updatedOrder.inventory.status = "allocated";
+
+    await updatedOrder.save();
+  }
 
   if (!updatedOrder) {
     const existingOrder = await Order.findById(orderId);
@@ -138,7 +143,7 @@ const handlePaymentCaptured = async (orderId, razorpayPaymentId) => {
       existingOrder.payment.status === "captured" &&
       existingOrder.payment.razorpayPaymentId === razorpayPaymentId
     ) {
-      await existingOrder.populate("user", "name, email");
+      await existingOrder.populate("user", "name email");
 
       if (!existingOrder.email.orderConfirmationQueued) {
         const email = await orderConfirmationEmail(existingOrder);

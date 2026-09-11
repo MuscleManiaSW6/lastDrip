@@ -14,14 +14,22 @@ const register = async (name, email, password, phone) => {
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    phone,
-  });
+  try {
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+    });
 
-  return user;
+    return user;
+  } catch (err) {
+    if (err.code === 11000 && err.keyPattern?.email) {
+      return null;
+    }
+
+    throw err;
+  }
 };
 
 //* POST(/login)

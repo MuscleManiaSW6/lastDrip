@@ -118,7 +118,7 @@ const createProduct = (
 };
 
 //* PUT(/:id)
-const replaceProduct = (
+const replaceProduct = async (
   name,
   price,
   description,
@@ -127,6 +127,12 @@ const replaceProduct = (
   images,
   id,
 ) => {
+  const existingProduct = await Product.findById(id);
+
+  if (!existingProduct) {
+    return null;
+  }
+
   const newProduct = {
     name,
     price,
@@ -143,7 +149,7 @@ const replaceProduct = (
 };
 
 //* PATCH(/:id)
-const updateProduct = (
+const updateProduct = async (
   name,
   price,
   description,
@@ -191,7 +197,20 @@ const updateProduct = (
 
 //* DELETE(/:id)
 const removeProduct = (id) => {
-  return Product.findByIdAndDelete(id);
+  return Product.findOneAndUpdate(
+    {
+      _id: id,
+      isActive: true,
+    },
+    {
+      $set: {
+        isActive: false,
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
 };
 
 export {

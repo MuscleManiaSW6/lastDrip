@@ -2,6 +2,11 @@ import { z } from "zod";
 
 //* Variant Schema
 const variantSchema = z.object({
+  _id: z
+    .string()
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid variant ID")
+    .optional(),
+
   sku: z.string().trim().min(1, "Invalid SKU"),
   size: z.string().trim().min(1, "Invalid size"),
   color: z.string().trim().min(1, "Invalid color"),
