@@ -11,6 +11,8 @@ import {
   handleRefundWebhook,
 } from "./paymentServices.js";
 
+const WEBHOOK_STALE_TIME = 5 * 60 * 1000;
+
 //* Verify Razorpay Webhook
 const verifyRazorpayWebhook = (rawBody, signature) => {
   const generatedSignature = crypto
@@ -42,35 +44,17 @@ const claimWebhookEvent = async (eventId) => {
     }
   }
 
-  const existingEvent = await ProcessedWebhook.findOne({
-    eventId,
-    provider: "razorpay",
-  });
-
-  if (!existingEvent) {
-    throw new Error("WEBHOOK_EVENT_CLAIM_FAILED");
-  }
-
-  if (existingEvent.status === "completed") {
-    return null;
-  }
-
-  const staleProcessing =
-    existingEvent.status === "processing" &&
-    existingEvent.updatedAt < new Date(Date.now() - 5 * 60 * 1000);
-
-  if (existingEvent.status === "processing" && !staleProcessing) {
-    return null;
-  }
+  const staleTime = new Date(Date.now() - WEBHOOK_STALE_TIME);
 
   const claimedEvent = await ProcessedWebhook.findOneAndUpdate(
     {
-      _id: existingEvent._id,
+      eventId,
+      provider: "razorpay",
       $or: [
         { status: "failed" },
         {
           status: "processing",
-          updatedAt: { $lt: new Date(Date.now() - 5 * 60 * 1000) },
+          updatedAt: { $lt: staleTime },
         },
       ],
     },

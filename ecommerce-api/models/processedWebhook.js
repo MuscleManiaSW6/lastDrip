@@ -5,8 +5,6 @@ const processedWebhookSchema = new mongoose.Schema(
     eventId: {
       type: String,
       required: true,
-      unique: true,
-      index: true,
     },
 
     provider: {
@@ -32,6 +30,8 @@ const processedWebhookSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+processedWebhookSchema.index({ provider: 1, eventId: 1 }, { unique: true });
 
 const ProcessedWebhook = mongoose.model(
   "ProcessedWebhook",

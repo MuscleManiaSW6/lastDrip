@@ -9,6 +9,18 @@ import { processEmailJobs } from "./workers/emailWorker.js";
 
 const port = env.PORT;
 
+const runEmailWorker = async () => {
+  while (true) {
+    try {
+      await processEmailJobs();
+    } catch (err) {
+      console.error("Email worker error", err);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+};
+
 const startServer = async () => {
   try {
     await connectDB();
@@ -17,11 +29,7 @@ const startServer = async () => {
       console.log(`Server running at ${port}`);
     });
 
-    setInterval(() => {
-      processEmailJobs().catch((err) => {
-        console.error("Email worker error", err);
-      });
-    }, 5000);
+    runEmailWorker();
   } catch (err) {
     console.log(err);
   }
