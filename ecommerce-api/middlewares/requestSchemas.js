@@ -166,7 +166,7 @@ export const paymentVerificationSchema = z.object({
 
 //* Product Query Schema
 export const productQuerySchema = z.object({
-  body: z.object({}),
+  body: z.object({}).optional(),
   params: z.object({}),
   query: z.object({
     name: z.string().trim().optional(),
@@ -189,7 +189,7 @@ export const productQuerySchema = z.object({
 
 //* Product Search Schema
 export const productSearchSchema = z.object({
-  body: z.object({}),
+  body: z.object({}).optional(),
   params: z.object({}),
   query: z.object({
     name: z.string().trim().optional(),

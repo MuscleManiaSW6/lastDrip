@@ -53,16 +53,17 @@ const patchSchema = z
 
 //* POST Schema
 const postSchema = z.object({
-  body: z.object({
-    name: z.string().trim().min(1, "Invalid product name"),
-    price: z.number().positive("Invalid product price"),
-    description: z.string().trim().min(1, "Invalid description"),
-    category: z.string().trim().min(1, "Invalid category"),
-    variants: z.array(variantSchema).min(1, "At least one variant is required"),
-    images: z.array(imageSchema).optional(),
-  }),
-  params: z.object({}),
-  query: z.object({}),
+  name: z.string().trim().min(1, "Invalid product name"),
+
+  price: z.number().positive("Invalid product price"),
+
+  description: z.string().trim().min(1, "Invalid description"),
+
+  category: z.string().trim().min(1, "Invalid category"),
+
+  variants: z.array(variantSchema).min(1, "At least one variant is required"),
+
+  images: z.array(imageSchema).optional(),
 });
 
 //* PUT Validation
