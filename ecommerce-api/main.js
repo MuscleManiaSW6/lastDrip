@@ -3,36 +3,84 @@ import "dotenv/config";
 import { env } from "./config/env.js";
 
 import app from "./app.js";
-import connectDB from "./config/DB.js";
+import connectDB, { disconnectDB } from "./config/DB.js";
 
 import { processEmailJobs } from "./workers/emailWorker.js";
 
 const port = env.PORT;
 
+let server;
+let shuttingDown = false;
+
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 const runEmailWorker = async () => {
-  while (true) {
+  while (!shuttingDown) {
     try {
       await processEmailJobs();
     } catch (err) {
       console.error("Email worker error", err);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (!shuttingDown) {
+      await sleep(5000);
+    }
   }
+};
+
+const gracefulShutdown = async (signal) => {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  try {
+    if (server) {
+      await new Promise((resolve) => {
+        server.close(() => {
+          console.log("HTTP server closed");
+          resolve();
+        });
+      });
+    }
+
+    await disconnectDB();
+  } catch (err) {
+    console.error("Error during graceful shutdown", err);
+    process.exit(1);
+  }
+
+  process.exit(0);
 };
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(port, () => {
+    server = app.listen(port, () => {
       console.log(`Server running at ${port}`);
     });
 
-    runEmailWorker();
+    runEmailWorker().catch((err) => {
+      console.error("Email worker stopped unexpectedly", err);
+    });
   } catch (err) {
-    console.log(err);
+    console.error("Server startup failed", err);
+    process.exit(1);
   }
 };
+
+process.on("SIGTERM", () => {
+  gracefulShutdown("SIGTERM");
+});
+
+process.on("SIGINT", () => {
+  gracefulShutdown("SIGINT");
+});
 
 startServer();

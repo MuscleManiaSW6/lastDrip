@@ -2,6 +2,15 @@ import resend from "../config/resend.js";
 import { retry } from "../utils/retry.js";
 import EmailJob from "../models/EmailJob.js";
 
+const escapeHtml = (value) => {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+};
+
 const sendEmail = async (to, subject, html) => {
   return await retry(async () => {
     const { data, error } = await resend.emails.send({
@@ -30,22 +39,25 @@ const queueEmail = async (to, subject, html) => {
 };
 
 const orderConfirmationEmail = async (order) => {
+  const userName = escapeHtml(order.user.name);
+  const orderNumber = escapeHtml(order.orderNumber);
+
   const html = `
   <h1>Order Confirmed</h1>
 
-  <p>Hi ${order.user.name},</p>
+  <p>Hi ${userName},</p>
 
   <p>Thank you for your order</p>
 
   <h2>Order Details</h2>
 
-  <p><strong>Order ID: </strong> ${order.orderNumber}</p>
+  <p><strong>Order ID: </strong> ${orderNumber}</p>
 
   <ul>
     ${order.products
       .map(
         (item) => `<li>
-      ${item.name} x ${item.quantity} - Rs${item.price * item.quantity}
+      ${escapeHtml(item.name)} x ${item.quantity} - Rs${item.price * item.quantity}
       </li>`,
       )
       .join("")}
@@ -62,22 +74,25 @@ const orderConfirmationEmail = async (order) => {
 };
 
 const paymentFailureEmail = async (order) => {
-  const html = `
-  <h1>Payment Failed<h1/>
+  const userName = escapeHtml(order.user.name);
+  const orderId = escapeHtml(order._id);
 
-  <p>Hi ${order.user.name}, </p>
+  const html = `
+  <h1>Payment Failed</h1>
+
+  <p>Hi ${userName},</p>
 
   <p>Unfortunately, your payment for the following order was unsuccessful</p>
 
   <h2>Order Details</h2>
 
-  <p><strong>Order ID:</strong>${order._id}</p>
+  <p><strong>Order ID:</strong> ${orderId}</p>
 
   <ul>
   ${order.products
     .map(
       (item) =>
-        `<li>${item.name} x ${item.quantity} - Rs${item.price * item.quantity}</li>`,
+        `<li>${escapeHtml(item.name)} x ${item.quantity} - Rs${item.price * item.quantity}</li>`,
     )
     .join("")}
   </ul>
