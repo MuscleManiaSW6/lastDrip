@@ -94,6 +94,7 @@ const createRazorpayRefund = async (paymentId, amount, idempotencyKey) => {
         "X-Refund-Idempotency": idempotencyKey,
       },
       body: JSON.stringify({ amount }),
+      signal: AbortSignal.timeout(10000),
     },
   );
 

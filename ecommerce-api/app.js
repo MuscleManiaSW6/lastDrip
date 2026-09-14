@@ -31,6 +31,12 @@ app.use("/products", productRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+  });
+});
+
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Ecommerce Home Page" });
 });

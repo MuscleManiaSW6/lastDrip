@@ -20,7 +20,15 @@ const razorpayWebhooks = async (req, res) => {
     });
   }
 
-  const event = JSON.parse(req.body.toString());
+  let event;
+
+  try {
+    event = JSON.parse(req.body.toString());
+  } catch (err) {
+    const error = new Error("INVALID_JSON_PAYLOAD");
+    error.statusCode = 400;
+    throw error;
+  }
 
   await processRazorpayWebhook(event);
 

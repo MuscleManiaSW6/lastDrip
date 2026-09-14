@@ -20,7 +20,14 @@ const verifyRazorpayWebhook = (rawBody, signature) => {
     .update(rawBody)
     .digest("hex");
 
-  return generatedSignature === signature;
+  const generatedSignatureBuffer = Buffer.from(generatedSignature, "utf8");
+  const signatureBuffer = Buffer.from(signature, "utf8");
+
+  if (generatedSignatureBuffer.length !== signatureBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(generatedSignatureBuffer, signatureBuffer);
 };
 
 const supportedEvents = new Set([
