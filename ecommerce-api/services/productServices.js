@@ -1,10 +1,12 @@
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
 
+//* Escape Regex Helper
 const escapeRegex = (value) => {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
+//* Sort Options Helper
 const sortOptions = {
   newest: { _id: -1 },
   oldest: { _id: 1 },
@@ -12,6 +14,38 @@ const sortOptions = {
   priceDesc: { price: -1 },
   nameAsc: { name: 1 },
   nameDesc: { name: -1 },
+};
+
+//* Variant Helper
+const prepareVariantsForUpdate = (incomingVariants, existingVariants) => {
+  return incomingVariants.map((variant) => {
+    if (variant._id) {
+      const existingVariant = existingVariants.id(variant._id);
+
+      if (!existingVariant) {
+        const err = new Error("VARIANT_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      return {
+        _id: existingVariant._id,
+        sku: variant.sku,
+        size: variant.size,
+        color: variant.color,
+        price: variant.price,
+        stock: existingVariant.stock,
+      };
+    }
+
+    return {
+      sku: variant.sku,
+      size: variant.size,
+      color: variant.color,
+      price: variant.price,
+      stock: 0,
+    };
+  });
 };
 
 //* GET(/)
@@ -133,12 +167,17 @@ const replaceProduct = async (
     return null;
   }
 
+  const updatedVariants = prepareVariantsForUpdate(
+    variants,
+    existingProduct.variants,
+  );
+
   const newProduct = {
     name,
     price,
     description,
     category,
-    variants,
+    variants: updatedVariants,
     images,
   };
 
@@ -178,7 +217,16 @@ const updateProduct = async (
   }
 
   if (variants !== undefined) {
-    update.variants = variants;
+    const existingProduct = await Product.findById(id);
+
+    if (!existingProduct) {
+      return null;
+    }
+
+    update.variants = prepareVariantsForUpdate(
+      variants,
+      existingProduct.variants,
+    );
   }
 
   if (images !== undefined) {
@@ -213,6 +261,62 @@ const removeProduct = (id) => {
   );
 };
 
+//* PATCH(/:productId/variants/:variantId/stock)
+const updateVariantStock = async (productId, variantId, adjustment) => {
+  if (adjustment === 0) {
+    const product = await Product.findOne({
+      _id: productId,
+      "variants._id": variantId,
+    });
+
+    if (!product) {
+      return null;
+    }
+
+    const variant = product.variants.id(variantId);
+
+    return {
+      product,
+      variant,
+    };
+  }
+
+  const product = await Product.findOneAndUpdate(
+    {
+      _id: productId,
+      "variants._id": variantId,
+      variants: {
+        $elemMatch: {
+          _id: variantId,
+          stock: {
+            $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
+          },
+        },
+      },
+    },
+    {
+      $inc: {
+        "variants.$.stock": adjustment,
+      },
+    },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    },
+  );
+
+  if (!product) {
+    return null;
+  }
+
+  const variant = product.variants.id(variantId);
+
+  return {
+    product,
+    variant,
+  };
+};
+
 export {
   getAllProducts,
   getById,
@@ -221,4 +325,5 @@ export {
   replaceProduct,
   updateProduct,
   removeProduct,
+  updateVariantStock,
 };

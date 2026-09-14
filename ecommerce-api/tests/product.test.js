@@ -62,7 +62,7 @@ describe("Product API", () => {
     category = "T-Shirts",
     isActive = true,
   } = {}) => {
-    return await Product.create({
+    return Product.create({
       name,
       price,
       description: `${name} description`,
@@ -153,6 +153,10 @@ describe("Product API", () => {
     await mongoose.connection.close();
   });
 
+  // ---------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------
+
   test("creates a product as an admin", async () => {
     const payload = productPayload();
 
@@ -172,10 +176,15 @@ describe("Product API", () => {
     expect(response.body.images).toHaveLength(1);
     expect(response.body.isActive).toBe(true);
 
+    expect(response.body.variants[0].stock).toBe(20);
+    expect(response.body.variants[1].stock).toBe(15);
+
     const product = await Product.findById(response.body._id);
 
     expect(product).not.toBeNull();
     expect(product.name).toBe(payload.name);
+    expect(product.variants[0].stock).toBe(20);
+    expect(product.variants[1].stock).toBe(15);
   });
 
   test("rejects product creation without authentication", async () => {
@@ -223,6 +232,10 @@ describe("Product API", () => {
 
     expect(products).toHaveLength(0);
   });
+
+  // ---------------------------------------------------------
+  // GET
+  // ---------------------------------------------------------
 
   test("gets only active products from the public product list", async () => {
     const activeProduct = await createProduct({
@@ -306,6 +319,10 @@ describe("Product API", () => {
     });
   });
 
+  // ---------------------------------------------------------
+  // SEARCH
+  // ---------------------------------------------------------
+
   test("searches products by name", async () => {
     await createProduct({
       name: "Black Oversized Hoodie",
@@ -320,7 +337,6 @@ describe("Product API", () => {
     });
 
     expect(response.status).toBe(200);
-
     expect(response.body).toHaveLength(1);
     expect(response.body[0].name).toBe("Black Oversized Hoodie");
   });
@@ -341,7 +357,6 @@ describe("Product API", () => {
     });
 
     expect(response.status).toBe(200);
-
     expect(response.body).toHaveLength(1);
     expect(response.body[0].name).toBe("Cheap Product");
   });
@@ -362,7 +377,6 @@ describe("Product API", () => {
     });
 
     expect(response.status).toBe(200);
-
     expect(response.body).toHaveLength(1);
     expect(response.body[0].name).toBe("Visible Hoodie");
   });
@@ -378,6 +392,10 @@ describe("Product API", () => {
       message: "Product not found",
     });
   });
+
+  // ---------------------------------------------------------
+  // PUT
+  // ---------------------------------------------------------
 
   test("updates a product completely with PUT as an admin", async () => {
     const product = await createProduct({
@@ -399,7 +417,6 @@ describe("Product API", () => {
     expect(response.status).toBe(200);
 
     expect(response.body.name).toBe("Completely Replaced Product");
-
     expect(response.body.price).toBe(2000);
     expect(response.body.category).toBe("Hoodies");
 
@@ -409,8 +426,67 @@ describe("Product API", () => {
     const updatedProduct = await Product.findById(product._id);
 
     expect(updatedProduct.name).toBe("Completely Replaced Product");
-
     expect(updatedProduct.price).toBe(2000);
+  });
+
+  test("preserves existing stock when replacing a product with PUT", async () => {
+    const product = await createProduct({
+      name: "Stock Protected Product",
+    });
+
+    const existingVariant = product.variants[0];
+    const existingVariantId = existingVariant._id.toString();
+
+    const originalStock = existingVariant.stock;
+
+    const payload = {
+      name: "Replaced Stock Protected Product",
+      price: 1800,
+      description: "Updated product description",
+      category: "Hoodies",
+      images: [
+        {
+          url: "https://example.com/replaced-shirt.jpg",
+          alt: "Replaced shirt",
+        },
+      ],
+      variants: [
+        {
+          _id: existingVariantId,
+          sku: "UPDATED-SKU",
+          size: existingVariant.size,
+          color: existingVariant.color,
+          price: 1800,
+          stock: 999,
+        },
+        {
+          sku: "NEW-VARIANT-SKU",
+          size: "XL",
+          color: "Black",
+          price: 1900,
+          stock: 500,
+        },
+      ],
+    };
+
+    const response = await request(app)
+      .put(`/products/${product._id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send(payload);
+
+    expect(response.status).toBe(200);
+
+    const updatedProduct = await Product.findById(product._id);
+
+    const updatedExistingVariant =
+      updatedProduct.variants.id(existingVariantId);
+
+    const newVariant = updatedProduct.variants.find(
+      (variant) => variant.sku === "NEW-VARIANT-SKU",
+    );
+
+    expect(updatedExistingVariant.stock).toBe(originalStock);
+    expect(newVariant.stock).toBe(0);
   });
 
   test("rejects product replacement by a normal user", async () => {
@@ -427,6 +503,10 @@ describe("Product API", () => {
 
     expect(unchangedProduct.name).toBe("Test T-Shirt");
   });
+
+  // ---------------------------------------------------------
+  // PATCH PRODUCT
+  // ---------------------------------------------------------
 
   test("partially updates a product with PATCH", async () => {
     const product = await createProduct({
@@ -447,16 +527,56 @@ describe("Product API", () => {
 
     expect(response.body.name).toBe("Updated Product");
     expect(response.body.price).toBe(1300);
-
     expect(response.body.description).toBe("Original Product description");
-
     expect(response.body.category).toBe("T-Shirts");
+  });
+
+  test("preserves existing stock when updating variants with PATCH", async () => {
+    const product = await createProduct({
+      name: "Patch Stock Protected Product",
+    });
+
+    const existingVariant = product.variants[0];
+    const existingVariantId = existingVariant._id.toString();
+
+    const originalStock = existingVariant.stock;
+
+    const response = await request(app)
+      .patch(`/products/${product._id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        variants: [
+          {
+            _id: existingVariantId,
+            sku: "PATCHED-SKU",
+            size: existingVariant.size,
+            color: "White",
+            price: 1200,
+            stock: 999,
+          },
+          {
+            sku: "PATCH-NEW-VARIANT",
+            size: "XL",
+            color: "White",
+            price: 1300,
+            stock: 500,
+          },
+        ],
+      });
+
+    expect(response.status).toBe(200);
 
     const updatedProduct = await Product.findById(product._id);
 
-    expect(updatedProduct.name).toBe("Updated Product");
-    expect(updatedProduct.price).toBe(1300);
-    expect(updatedProduct.category).toBe("T-Shirts");
+    const updatedExistingVariant =
+      updatedProduct.variants.id(existingVariantId);
+
+    const newVariant = updatedProduct.variants.find(
+      (variant) => variant.sku === "PATCH-NEW-VARIANT",
+    );
+
+    expect(updatedExistingVariant.stock).toBe(originalStock);
+    expect(newVariant.stock).toBe(0);
   });
 
   test("can deactivate a product using PATCH", async () => {
@@ -473,7 +593,6 @@ describe("Product API", () => {
       });
 
     expect(response.status).toBe(200);
-
     expect(response.body.isActive).toBe(false);
 
     const publicResponse = await request(app).get(`/products/${product._id}`);
@@ -493,6 +612,221 @@ describe("Product API", () => {
 
     expect(response.body.message).toBe("Please provide a field to update");
   });
+
+  // ---------------------------------------------------------
+  // STOCK
+  // ---------------------------------------------------------
+
+  test("increases variant stock through the dedicated stock endpoint", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 7,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body._id).toBe(variantId);
+    expect(response.body.stock).toBe(17);
+
+    const updatedProduct = await Product.findById(product._id);
+
+    expect(updatedProduct.variants[0].stock).toBe(17);
+  });
+
+  test("decreases variant stock through the dedicated stock endpoint", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: -4,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.stock).toBe(6);
+
+    const updatedProduct = await Product.findById(product._id);
+
+    expect(updatedProduct.variants[0].stock).toBe(6);
+  });
+
+  test("supports increasing and decreasing stock sequentially", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const increaseResponse = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 7,
+      });
+
+    expect(increaseResponse.status).toBe(200);
+    expect(increaseResponse.body.stock).toBe(17);
+
+    const decreaseResponse = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: -5,
+      });
+
+    expect(decreaseResponse.status).toBe(200);
+    expect(decreaseResponse.body.stock).toBe(12);
+
+    const updatedProduct = await Product.findById(product._id);
+
+    expect(updatedProduct.variants[0].stock).toBe(12);
+  });
+
+  test("rejects a stock adjustment that would make stock negative", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: -11,
+      });
+
+    expect(response.status).toBe(404);
+
+    expect(response.body).toEqual({
+      message: "Product or variant not found",
+    });
+
+    const unchangedProduct = await Product.findById(product._id);
+
+    expect(unchangedProduct.variants[0].stock).toBe(10);
+  });
+
+  test("rejects stock updates without authentication", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .send({
+        adjustment: 5,
+      });
+
+    expect(response.status).toBe(401);
+
+    const unchangedProduct = await Product.findById(product._id);
+
+    expect(unchangedProduct.variants[0].stock).toBe(10);
+  });
+
+  test("rejects stock updates by a normal user", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        adjustment: 5,
+      });
+
+    expect(response.status).toBe(403);
+
+    const unchangedProduct = await Product.findById(product._id);
+
+    expect(unchangedProduct.variants[0].stock).toBe(10);
+  });
+
+  test("rejects an invalid stock adjustment", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 2.5,
+      });
+
+    expect(response.status).toBe(400);
+
+    const unchangedProduct = await Product.findById(product._id);
+
+    expect(unchangedProduct.variants[0].stock).toBe(10);
+  });
+
+  test("rejects an invalid product ID for stock updates", async () => {
+    const product = await createProduct();
+
+    const variantId = product.variants[0]._id.toString();
+
+    const response = await request(app)
+      .patch(`/products/not-a-valid-id/variants/${variantId}/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 5,
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      message: "invalid ID",
+    });
+  });
+
+  test("rejects an invalid variant ID for stock updates", async () => {
+    const product = await createProduct();
+
+    const response = await request(app)
+      .patch(`/products/${product._id}/variants/not-a-valid-id/stock`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 5,
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      message: "invalid ID",
+    });
+  });
+
+  test("returns 404 when the stock update targets a nonexistent variant", async () => {
+    const product = await createProduct();
+
+    const nonexistentVariantId = new mongoose.Types.ObjectId();
+
+    const response = await request(app)
+      .patch(
+        `/products/${product._id}/variants/${nonexistentVariantId}/stock`,
+      )
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        adjustment: 5,
+      });
+
+    expect(response.status).toBe(404);
+
+    expect(response.body).toEqual({
+      message: "Product or variant not found",
+    });
+  });
+
+  // ---------------------------------------------------------
+  // DELETE
+  // ---------------------------------------------------------
 
   test("soft deletes an active product as an admin", async () => {
     const product = await createProduct({
@@ -544,6 +878,10 @@ describe("Product API", () => {
     });
   });
 
+  // ---------------------------------------------------------
+  // PAGINATION / SORTING
+  // ---------------------------------------------------------
+
   test("supports pagination for product listing", async () => {
     await createProduct({
       name: "Product One",
@@ -594,9 +932,7 @@ describe("Product API", () => {
     expect(response.status).toBe(200);
 
     expect(response.body.products[0].name).toBe("Cheap Product");
-
     expect(response.body.products[1].name).toBe("Medium Product");
-
     expect(response.body.products[2].name).toBe("Expensive Product");
   });
 

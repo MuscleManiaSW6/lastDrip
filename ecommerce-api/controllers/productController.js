@@ -6,6 +6,7 @@ import {
   replaceProduct,
   searchProduct,
   updateProduct,
+  updateVariantStock,
 } from "../services/productServices.js";
 
 //* GET(/)
@@ -114,6 +115,22 @@ const deleteProduct = async (req, res) => {
   return res.status(200).json({ message: "Product removed successfully" });
 };
 
+//* PATCH(/:productId/variants/:variantId/stock)
+const patchVariantStock = async (req, res) => {
+  const { productId, variantId } = req.params;
+  const { adjustment } = req.body;
+
+  const result = await updateVariantStock(productId, variantId, adjustment);
+
+  if (!result) {
+    return res.status(404).json({
+      message: "Product or variant not found",
+    });
+  }
+
+  return res.status(200).json(result.variant);
+};
+
 export {
   getProduct,
   getProductId,
@@ -122,4 +139,5 @@ export {
   putProduct,
   patchProduct,
   deleteProduct,
+  patchVariantStock,
 };

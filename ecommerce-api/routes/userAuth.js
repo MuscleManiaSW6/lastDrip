@@ -81,6 +81,7 @@ router.patch(
   "/admin/:id/status",
   authenticateUser,
   authorizeAdmin,
+  validateObjectId,
   validateRequest(updateCustomerStatusSchema),
   updateCustomerStatus,
 );

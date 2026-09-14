@@ -8,12 +8,14 @@ import {
   patchProduct,
   postProduct,
   putProduct,
+  patchVariantStock,
 } from "../controllers/productController.js";
 
 import {
   validatePatch,
   validatePost,
   validatePut,
+  validateStock,
 } from "../middlewares/validateProducts.js";
 
 import validateRequest from "../middlewares/validateRequest.js";
@@ -25,6 +27,7 @@ import {
 import validateObjectId from "../middlewares/validateProductId.js";
 import authenticateUser from "../middlewares/authenticateToken.js";
 import authorizeAdmin from "../middlewares/authorizeAdmin.js";
+import validateProductVariantIds from "../middlewares/validateProductVariantIds.js";
 
 const router = express.Router();
 
@@ -52,6 +55,15 @@ router.patch(
   authorizeAdmin,
   validatePatch,
   patchProduct,
+);
+
+router.patch(
+  "/:productId/variants/:variantId/stock",
+  validateProductVariantIds,
+  authenticateUser,
+  authorizeAdmin,
+  validateStock,
+  patchVariantStock,
 );
 
 router.delete(

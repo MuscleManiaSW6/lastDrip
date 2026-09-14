@@ -10,6 +10,7 @@ import { processEmailJobs } from "./workers/emailWorker.js";
 const port = env.PORT;
 
 let server;
+let workerPromise;
 let shuttingDown = false;
 
 const sleep = (ms) => {
@@ -49,6 +50,11 @@ const gracefulShutdown = async (signal) => {
       });
     }
 
+    if (workerPromise) {
+      await workerPromise;
+      console.log("Email worker stopped");
+    }
+
     await disconnectDB();
   } catch (err) {
     console.error("Error during graceful shutdown", err);
@@ -66,7 +72,7 @@ const startServer = async () => {
       console.log(`Server running at ${port}`);
     });
 
-    runEmailWorker().catch((err) => {
+    workerPromise = runEmailWorker().catch((err) => {
       console.error("Email worker stopped unexpectedly", err);
     });
   } catch (err) {
