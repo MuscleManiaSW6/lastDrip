@@ -20,10 +20,7 @@ describe("Razorpay Webhook", () => {
 
   const createSignature = (rawBody) => {
     return crypto
-      .createHmac(
-        "sha256",
-        process.env.RAZORPAY_WEBHOOK_SECRET,
-      )
+      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
       .update(rawBody)
       .digest("hex");
   };
@@ -106,6 +103,7 @@ describe("Razorpay Webhook", () => {
 
   afterEach(async () => {
     await EmailJob.deleteMany({});
+
     await ProcessedWebhook.deleteMany({
       provider: "razorpay",
     });
@@ -125,8 +123,9 @@ describe("Razorpay Webhook", () => {
   });
 
   test("processes a valid payment.captured webhook", async () => {
+    const eventId = `evt_captured_${Date.now()}`;
+
     const body = {
-      id: `evt_captured_${Date.now()}`,
       event: "payment.captured",
 
       payload: {
@@ -148,6 +147,7 @@ describe("Razorpay Webhook", () => {
       .post("/webhooks/razorpay")
       .set("Content-Type", "application/json")
       .set("x-razorpay-signature", signature)
+      .set("x-razorpay-event-id", eventId)
       .send(rawBody);
 
     expect(response.status).toBe(200);
@@ -160,14 +160,12 @@ describe("Razorpay Webhook", () => {
 
     expect(updatedOrder.payment.status).toBe("captured");
 
-    expect(updatedOrder.payment.razorpayPaymentId).toBe(
-      "pay_webhook_test_123",
-    );
+    expect(updatedOrder.payment.razorpayPaymentId).toBe("pay_webhook_test_123");
 
     expect(updatedOrder.inventory.status).toBe("allocated");
 
     const webhookEvent = await ProcessedWebhook.findOne({
-      eventId: body.id,
+      eventId,
       provider: "razorpay",
     });
 
@@ -176,8 +174,9 @@ describe("Razorpay Webhook", () => {
   });
 
   test("processes a payment.failed webhook and releases inventory", async () => {
+    const eventId = `evt_failed_${Date.now()}`;
+
     const body = {
-      id: `evt_failed_${Date.now()}`,
       event: "payment.failed",
 
       payload: {
@@ -199,6 +198,7 @@ describe("Razorpay Webhook", () => {
       .post("/webhooks/razorpay")
       .set("Content-Type", "application/json")
       .set("x-razorpay-signature", signature)
+      .set("x-razorpay-event-id", eventId)
       .send(rawBody);
 
     expect(response.status).toBe(200);
@@ -214,7 +214,7 @@ describe("Razorpay Webhook", () => {
     expect(updatedProduct.variants[0].stock).toBe(1);
 
     const webhookEvent = await ProcessedWebhook.findOne({
-      eventId: body.id,
+      eventId,
       provider: "razorpay",
     });
 
@@ -223,8 +223,9 @@ describe("Razorpay Webhook", () => {
   });
 
   test("does not process the same webhook event twice", async () => {
+    const eventId = `evt_duplicate_${Date.now()}`;
+
     const body = {
-      id: `evt_duplicate_${Date.now()}`,
       event: "payment.failed",
 
       payload: {
@@ -246,6 +247,7 @@ describe("Razorpay Webhook", () => {
       .post("/webhooks/razorpay")
       .set("Content-Type", "application/json")
       .set("x-razorpay-signature", signature)
+      .set("x-razorpay-event-id", eventId)
       .send(rawBody);
 
     expect(firstResponse.status).toBe(200);
@@ -258,6 +260,7 @@ describe("Razorpay Webhook", () => {
       .post("/webhooks/razorpay")
       .set("Content-Type", "application/json")
       .set("x-razorpay-signature", signature)
+      .set("x-razorpay-event-id", eventId)
       .send(rawBody);
 
     expect(secondResponse.status).toBe(200);
@@ -273,7 +276,7 @@ describe("Razorpay Webhook", () => {
     expect(updatedOrder.inventory.status).toBe("released");
 
     const webhookEvents = await ProcessedWebhook.find({
-      eventId: body.id,
+      eventId,
       provider: "razorpay",
     });
 
@@ -282,7 +285,6 @@ describe("Razorpay Webhook", () => {
 
   test("rejects an invalid webhook signature", async () => {
     const body = {
-      id: `evt_invalid_${Date.now()}`,
       event: "payment.captured",
 
       payload: {
@@ -301,6 +303,7 @@ describe("Razorpay Webhook", () => {
       .post("/webhooks/razorpay")
       .set("Content-Type", "application/json")
       .set("x-razorpay-signature", "invalid_signature")
+      .set("x-razorpay-event-id", "evt_invalid_signature")
       .send(rawBody);
 
     expect(response.status).toBe(400);

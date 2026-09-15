@@ -80,17 +80,9 @@ const claimWebhookEvent = async (eventId) => {
 };
 
 //* Webhook Process
-const processRazorpayWebhook = async (event) => {
+const processRazorpayWebhook = async (event, eventId) => {
   if (!supportedEvents.has(event.event)) {
     return;
-  }
-
-  const eventId = event.id;
-
-  if (!eventId) {
-    const err = new Error("WEBHOOK_EVENT_ID_MISSING");
-    err.statusCode = 400;
-    throw err;
   }
 
   const webhookEvent = await claimWebhookEvent(eventId);

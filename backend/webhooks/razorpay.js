@@ -20,6 +20,14 @@ const razorpayWebhooks = async (req, res) => {
     });
   }
 
+  const eventId = req.headers["x-razorpay-event-id"];
+
+  if (!eventId) {
+    return res.status(400).json({
+      message: "WEBHOOK_EVENT_ID_MISSING",
+    });
+  }
+
   let event;
 
   try {
@@ -30,7 +38,7 @@ const razorpayWebhooks = async (req, res) => {
     throw error;
   }
 
-  await processRazorpayWebhook(event);
+  await processRazorpayWebhook(event, eventId);
 
   return res.status(200).json({
     received: true,
