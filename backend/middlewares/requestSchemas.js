@@ -160,7 +160,11 @@ export const paymentVerificationSchema = z.object({
     razorpay_order_id: z.string().min(1, "Order ID is required"),
     razorpay_signature: z.string().min(1, "Payment signature is required"),
   }),
-  params: z.object({}),
+
+  params: z.object({
+    id: objectId,
+  }),
+
   query: z.object({}),
 });
 
