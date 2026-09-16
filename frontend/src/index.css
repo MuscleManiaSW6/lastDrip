@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand Colors */
+  --color-ink: #111111;
+  --color-charcoal: #252525;
+  --color-bone: #f4f1ea;
+  --color-stone: #e7e3da;
+  --color-olive: #626b52;
+
+  /* Dark Theme */
+  --color-dark-bg: #111111;
+  --color-dark-surface: #252525;
+  --color-dark-text: #f4f1ea;
+  --color-dark-olive: #7c8668;
+
+  /* Typography */
+  --font-display: "Instrument Serif", serif;
+  --font-body: "Manrope", sans-serif;
+
+  /* Layout */
+  --container-lastdrip: 1440px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- Typography ---------- */
+
+.heading-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.text-body {
+  font-family: var(--font-body);
+}
+
+.text-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- Theme ---------- */
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
+}
+
+/* ---------- Utilities ---------- */
+
+.container-lastdrip {
+  width: min(100% - 2rem, var(--content-max-width));
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .container-lastdrip {
+    width: min(100% - 4rem, var(--content-max-width));
+  }
+}
