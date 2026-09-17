@@ -3,43 +3,67 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand Colors */
+  /* ---------- Brand ---------- */
+
   --color-ink: #111111;
   --color-charcoal: #252525;
   --color-bone: #f4f1ea;
   --color-stone: #e7e3da;
   --color-olive: #626b52;
 
-  /* Dark Theme */
-  --color-dark-bg: #111111;
-  --color-dark-surface: #252525;
-  --color-dark-text: #f4f1ea;
-  --color-dark-olive: #7c8668;
+  /* ---------- Semantic theme tokens ---------- */
 
-  /* Typography */
+  --color-background: #f4f1ea;
+  --color-surface: #e7e3da;
+  --color-foreground: #111111;
+  --color-foreground-soft: #252525;
+  --color-muted: #6f6b63;
+  --color-accent: #626b52;
+  --color-border: #d8d2c7;
+  --color-inverse: #f4f1ea;
+
+  /* ---------- Typography ---------- */
+
   --font-display: "Instrument Serif", serif;
   --font-body: "Manrope", sans-serif;
 
-  /* Layout */
-  --container-lastdrip: 1440px;
-}
+  /* ---------- Layout ---------- */
 
-* {
-  box-sizing: border-box;
+  --container-lastdrip: 1440px;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
+html.dark {
+  color-scheme: dark;
+
+  --color-background: #111111;
+  --color-surface: #252525;
+  --color-foreground: #f4f1ea;
+  --color-foreground-soft: #d5d0c7;
+  --color-muted: #aaa49a;
+  --color-accent: #7c8668;
+  --color-border: #3a3935;
+  --color-inverse: #111111;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   min-width: 320px;
-  background-color: var(--color-bone);
-  color: var(--color-ink);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 button,
@@ -72,10 +96,6 @@ a {
   letter-spacing: -0.02em;
 }
 
-.text-body {
-  font-family: var(--font-body);
-}
-
 .text-label {
   font-family: var(--font-body);
   font-size: 0.75rem;
@@ -84,26 +104,15 @@ a {
   text-transform: uppercase;
 }
 
-/* ---------- Theme ---------- */
-
-html.dark {
-  color-scheme: dark;
-}
-
-html.dark body {
-  background-color: var(--color-dark-bg);
-  color: var(--color-dark-text);
-}
-
-/* ---------- Utilities ---------- */
+/* ---------- Layout ---------- */
 
 .container-lastdrip {
-  width: min(100% - 2rem, var(--content-max-width));
+  width: min(100% - 2rem, var(--container-lastdrip));
   margin-inline: auto;
 }
 
 @media (min-width: 768px) {
   .container-lastdrip {
-    width: min(100% - 4rem, var(--content-max-width));
+    width: min(100% - 4rem, var(--container-lastdrip));
   }
 }
