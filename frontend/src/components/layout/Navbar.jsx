@@ -14,7 +14,7 @@ const Navbar = () => {
           Cart
         </Link>
 
-        <nav className="flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8">
           <Link to="/">Home</Link>
           <Link to="/products">Shop</Link>
           <Link to="/account">Account</Link>
