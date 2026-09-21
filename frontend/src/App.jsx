@@ -17,7 +17,7 @@ import Addresses from "./pages/Addresses";
 function App() {
   return (
     <Routes>
-      <Route element={Layout}>
+      <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
 
         <Route path="/products" element={<Products />} />
@@ -33,7 +33,7 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         <Route path="/account" element={<Account />} />
-        <Route path="/addresses" element={<Addresses />} />
+        <Route path="/account/addresses" element={<Addresses />} />
       </Route>
     </Routes>
   );
