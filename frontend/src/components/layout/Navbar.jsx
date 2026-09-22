@@ -24,14 +24,14 @@ const Navbar = () => {
           Menu
         </button>
         <Link
-          to="/"
+          to="/home"
           className="justify-self-center md:justify-self-start font-display text-3xl"
         >
           LASTDRIP
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 justify-self-center">
-          <Link to="/">Home</Link>
+          <Link to="/home">Home</Link>
           <Link to="/products">Shop</Link>
           <Link to="/account">Account</Link>
         </nav>
@@ -58,13 +58,13 @@ const Navbar = () => {
                 X
               </button>
 
-              <Link to="/" className="font-display text-3xl">
+              <Link to="/home" className="font-display text-3xl">
                 LASTDRIP
               </Link>
             </div>
 
             <nav className="flex flex-col items-start gap-8 mt-10">
-              <Link to="/" onClick={() => setMenuOpen(false)}>
+              <Link to="/home" onClick={() => setMenuOpen(false)}>
                 Home
               </Link>
 
