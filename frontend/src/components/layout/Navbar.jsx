@@ -59,13 +59,13 @@ const Navbar = () => {
 
               <Link
                 to="/"
-                className="justify-self-center md:hidden font-display text-3xl"
+                className="font-display text-3xl"
               >
                 LASTDRIP
               </Link>
             </div>
 
-            <nav className="flex flex-col items-start gap-8">
+            <nav className="flex flex-col items-start gap-8 mt-10">
               <Link to="/" onClick={() => setMenuOpen(false)}>
                 Home
               </Link>
