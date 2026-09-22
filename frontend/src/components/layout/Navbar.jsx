@@ -7,6 +7,10 @@ const Navbar = () => {
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [menuOpen]);
 
   return (
@@ -43,7 +47,7 @@ const Navbar = () => {
             onClick={() => setMenuOpen(false)}
           />
 
-          <aside className="fixed left-0 top-0 bottom-0 bg-background md:hidden">
+          <aside className="fixed inset-y-0 left-0 z-50 w-[85%] bg-background md:hidden">
             <button
               className="m-4 flex size-10 items-center justify-center"
               type="button"
@@ -51,13 +55,21 @@ const Navbar = () => {
             >
               X
             </button>
-          </aside>
 
-          <nav className="flex flex-col fixed left-0 top-0 bottom-0 items-center gap-8">
-            <Link to="/">Home</Link>
-            <Link to="/products">Shop</Link>
-            <Link to="/account">Account</Link>
-          </nav>
+            <nav className="flex flex-col items-center gap-8">
+              <Link to="/" onClick={() => setMenuOpen(false)}>
+                Home
+              </Link>
+
+              <Link to="/products" onClick={() => setMenuOpen(false)}>
+                Shop
+              </Link>
+
+              <Link to="/account" onClick={() => setMenuOpen(false)}>
+                Account
+              </Link>
+            </nav>
+          </aside>
         </>
       )}
     </header>
