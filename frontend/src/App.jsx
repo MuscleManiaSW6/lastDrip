@@ -18,8 +18,9 @@ import Addresses from "./pages/Addresses";
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
+
       <Route element={<Layout />}>
-        <Route path="/" element={<Landing />} />
         <Route path="/home" element={<Home />} />
 
         <Route path="/products" element={<Products />} />
