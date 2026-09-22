@@ -17,6 +17,7 @@ const Navbar = () => {
     <header className="border-b border-border bg-background">
       <div className="container-lastdrip grid grid-cols-3 items-center h-16">
         <button
+          type="button"
           className="justify-self-start md:hidden"
           onClick={() => setMenuOpen(true)}
         >
@@ -47,7 +48,7 @@ const Navbar = () => {
             onClick={() => setMenuOpen(false)}
           />
 
-          <aside className="flex flex-col fixed inset-y-0 left-0 z-50 w-[80%] bg-background md:hidden p-6">
+          <aside className="flex flex-col fixed inset-y-0 left-0 z-50 w-[70%] bg-background md:hidden p-6">
             <div className="flex items-center justify-between">
               <button
                 className="flex size-10 items-center justify-start"
@@ -57,10 +58,7 @@ const Navbar = () => {
                 X
               </button>
 
-              <Link
-                to="/"
-                className="font-display text-3xl"
-              >
+              <Link to="/" className="font-display text-3xl">
                 LASTDRIP
               </Link>
             </div>
