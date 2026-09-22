@@ -41,23 +41,23 @@ const Navbar = () => {
           <div
             className="fixed inset-0 z-40 bg-black/30 md:hidden"
             onClick={() => setMenuOpen(false)}
-          >
-            <aside className="fixed left-0 top-0 bottom-0 bg-background md:hidden">
-              <button
-                className="m-4 flex size-10 items-center justify-center"
-                type="button"
-                onClick={() => setMenuOpen(false)}
-              >
-                X
-              </button>
-            </aside>
+          />
 
-            <nav className="flex flex-col fixed left-0 top-0 bottom-0 items-center gap-8">
-              <Link to="/">Home</Link>
-              <Link to="/products">Shop</Link>
-              <Link to="/account">Account</Link>
-            </nav>
-          </div>
+          <aside className="fixed left-0 top-0 bottom-0 bg-background md:hidden">
+            <button
+              className="m-4 flex size-10 items-center justify-center"
+              type="button"
+              onClick={() => setMenuOpen(false)}
+            >
+              X
+            </button>
+          </aside>
+
+          <nav className="flex flex-col fixed left-0 top-0 bottom-0 items-center gap-8">
+            <Link to="/">Home</Link>
+            <Link to="/products">Shop</Link>
+            <Link to="/account">Account</Link>
+          </nav>
         </>
       )}
     </header>
