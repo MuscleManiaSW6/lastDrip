@@ -47,14 +47,23 @@ const Navbar = () => {
             onClick={() => setMenuOpen(false)}
           />
 
-          <aside className="fixed inset-y-0 left-0 z-50 w-[85%] bg-background md:hidden">
-            <button
-              className="m-4 flex size-10 items-center justify-center"
-              type="button"
-              onClick={() => setMenuOpen(false)}
-            >
-              X
-            </button>
+          <aside className="flex flex-col fixed inset-y-0 left-0 z-50 w-[80%] bg-background md:hidden">
+            <div className="flex items-center justify-between">
+              <button
+                className="m-4 flex size-10 items-center justify-center"
+                type="button"
+                onClick={() => setMenuOpen(false)}
+              >
+                X
+              </button>
+
+              <Link
+                to="/"
+                className="justify-self-center md:hidden font-display text-3xl"
+              >
+                LASTDRIP
+              </Link>
+            </div>
 
             <nav className="flex flex-col items-center gap-8">
               <Link to="/" onClick={() => setMenuOpen(false)}>
