@@ -59,13 +59,13 @@ const Navbar = () => {
 
               <Link
                 to="/"
-                className="justify-self-center md:hidden font-display text-3xl"
+                className="m-4 justify-self-center md:hidden font-display text-3xl"
               >
                 LASTDRIP
               </Link>
             </div>
 
-            <nav className="flex flex-col items-center gap-8">
+            <nav className="flex flex-col items-start gap-8 m-4 px-4">
               <Link to="/" onClick={() => setMenuOpen(false)}>
                 Home
               </Link>
