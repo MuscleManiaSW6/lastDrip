@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+  }, [menuOpen]);
 
   return (
     <header className="border-b border-border bg-background">
@@ -39,7 +43,11 @@ const Navbar = () => {
             onClick={() => setMenuOpen(false)}
           >
             <aside className="fixed left-0 top-0 bottom-0 bg-background md:hidden">
-              <button type="button" onClick={() => setMenuOpen(false)}>
+              <button
+                className="m-4 flex size-10 items-center justify-center"
+                type="button"
+                onClick={() => setMenuOpen(false)}
+              >
                 X
               </button>
             </aside>
