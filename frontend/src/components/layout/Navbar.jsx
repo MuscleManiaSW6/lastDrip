@@ -50,7 +50,7 @@ const Navbar = () => {
           <aside className="flex flex-col fixed inset-y-0 left-0 z-50 w-[80%] bg-background md:hidden p-6">
             <div className="flex items-center justify-between">
               <button
-                className="flex size-10 items-center justify-center"
+                className="flex size-10 items-center justify-start"
                 type="button"
                 onClick={() => setMenuOpen(false)}
               >
