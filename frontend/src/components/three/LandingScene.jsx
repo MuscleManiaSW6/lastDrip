@@ -1,11 +1,16 @@
 import { useRef } from "react";
+
 import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
 
 const LandingScene = () => {
   return (
     <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
       <ambientLight intensity={1} />
       <directionalLight position={[3, 3, 5]} intensity={2} />
+
+      <Environment preset="studio" />
+
       <Cube />
     </Canvas>
   );
