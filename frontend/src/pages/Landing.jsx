@@ -1,7 +1,11 @@
+import LandingScene from "../components/three/LandingScene";
+
 const Landing = () => {
   return (
     <main>
-      <section></section>
+      <section className="h-screen">
+        <LandingScene />
+      </section>
     </main>
   );
 };
