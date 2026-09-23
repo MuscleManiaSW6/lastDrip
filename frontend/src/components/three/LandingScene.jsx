@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 
+//* Landing Scene
 const LandingScene = () => {
   return (
     <Canvas shadows camera={{ position: [0, 2.5, 5], fov: 50 }}>
@@ -17,6 +18,7 @@ const LandingScene = () => {
   );
 };
 
+//* Cube
 const Cube = () => {
   const meshRef = useRef();
 
@@ -32,11 +34,12 @@ const Cube = () => {
   );
 };
 
+//* Floor
 const Floor = () => {
   return (
     <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <planeGeometry args={[10, 10]} />
-      <meshStandardMaterial color="#d8d2c7" />
+      <meshStandardMaterial color="red" />
     </mesh>
   );
 };
