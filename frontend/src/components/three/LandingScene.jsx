@@ -3,8 +3,9 @@ import { Canvas, useFrame } from "@react-three/fiber";
 
 const LandingScene = () => {
   return (
-    <Canvas camera={{position: [0,0,5], fov: 50}}>
+    <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
       <ambientLight intensity={1} />
+      <directionalLight position={[3, 3, 5]} intensity={2} />
       <Cube />
     </Canvas>
   );
