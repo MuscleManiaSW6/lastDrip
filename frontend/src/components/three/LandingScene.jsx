@@ -5,7 +5,7 @@ import { Environment } from "@react-three/drei";
 
 const LandingScene = () => {
   return (
-    <Canvas shadows camera={{ position: [0, 0, 5], fov: 50 }}>
+    <Canvas shadows camera={{ position: [0, 2, 5], fov: 50 }}>
       <ambientLight intensity={1} />
       <directionalLight castShadow position={[3, 3, 5]} intensity={2} />
 
@@ -33,15 +33,9 @@ const Cube = () => {
 };
 
 const Floor = () => {
-  const meshRef = useRef();
-
-  useFrame(() => {
-    meshRef.current.rotation = [-Math.PI / 2, 0, 0];
-  });
-
   return (
-    <mesh ref={meshRef} receiveShadow>
-      <planeGeometry />
+    <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[10, 10]} />
       <meshStandardMaterial color="#e7e3da" />
     </mesh>
   );
