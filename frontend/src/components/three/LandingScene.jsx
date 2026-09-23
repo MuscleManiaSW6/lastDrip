@@ -5,13 +5,14 @@ import { Environment } from "@react-three/drei";
 
 const LandingScene = () => {
   return (
-    <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+    <Canvas shadows camera={{ position: [0, 0, 5], fov: 50 }}>
       <ambientLight intensity={1} />
-      <directionalLight position={[3, 3, 5]} intensity={2} />
+      <directionalLight castShadow position={[3, 3, 5]} intensity={2} />
 
       <Environment preset="studio" />
 
       <Cube />
+      <Floor />
     </Canvas>
   );
 };
@@ -24,9 +25,24 @@ const Cube = () => {
   });
 
   return (
-    <mesh ref={meshRef}>
+    <mesh castShadow ref={meshRef}>
       <boxGeometry />
       <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
+    </mesh>
+  );
+};
+
+const Floor = () => {
+  const meshRef = useRef();
+
+  useFrame(() => {
+    meshRef.current.rotation = [-Math.PI / 2, 0, 0];
+  });
+
+  return (
+    <mesh ref={meshRef} receiveShadow>
+      <planeGeometry />
+      <meshStandardMaterial color="#e7e3da" />
     </mesh>
   );
 };
