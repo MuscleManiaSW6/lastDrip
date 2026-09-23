@@ -21,7 +21,7 @@ const Cube = () => {
   return (
     <mesh ref={meshRef}>
       <boxGeometry />
-      <meshStandardMaterial />
+      <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
     </mesh>
   );
 };
