@@ -27,7 +27,7 @@ const Cube = () => {
   });
 
   return (
-    <mesh castShadow ref={meshRef}>
+    <mesh castShadow ref={meshRef} position={[2, 0, 0]}>
       <boxGeometry />
       <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
     </mesh>
