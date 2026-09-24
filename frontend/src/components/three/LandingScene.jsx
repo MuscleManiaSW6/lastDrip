@@ -1,7 +1,7 @@
 import { useRef } from "react";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
+import { Text3D, Environment } from "@react-three/drei";
 
 //* Landing Scene
 const LandingScene = () => {
@@ -12,14 +12,31 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
-      <Cube />
+      {/* <Cube /> */}
+      <Letter />
       <Floor />
     </Canvas>
   );
 };
 
 //* Cube
-const Cube = () => {
+// const Cube = () => {
+//   const meshRef = useRef();
+
+//   useFrame(() => {
+//     meshRef.current.rotation.y += 0.01;
+//   });
+
+//   return (
+//     <mesh castShadow ref={meshRef} position={[2, 0, 0]}>
+//       <icosahedronGeometry args={[1.4, 3]} />
+//       <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
+//     </mesh>
+//   );
+// };
+
+//* Letter
+const Letter = () => {
   const meshRef = useRef();
 
   useFrame(() => {
@@ -27,10 +44,23 @@ const Cube = () => {
   });
 
   return (
-    <mesh castShadow ref={meshRef} position={[2, 0, 0]}>
-      <icosahedronGeometry args={[1.4, 3]} />
-      <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
-    </mesh>
+    <group>
+      <Text3D
+        font="/fonts/helvetiker_bold.typeface.json"
+        size={1.5}
+        height={0.25}
+        bevelEnabled
+        bevelSize={0.03}
+        bevelThickness={0.03}
+        bevelSegments={3}
+        ref={meshRef}
+        position={[-3, 0, 0]}
+        castShadow
+      >
+        L
+        <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
+      </Text3D>
+    </group>
   );
 };
 
