@@ -12,31 +12,14 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
-      {/* <Cube /> */}
-      <Letter />
+      <Letter char={"L"} />
       <Floor />
     </Canvas>
   );
 };
 
-//* Cube
-// const Cube = () => {
-//   const meshRef = useRef();
-
-//   useFrame(() => {
-//     meshRef.current.rotation.y += 0.01;
-//   });
-
-//   return (
-//     <mesh castShadow ref={meshRef} position={[2, 0, 0]}>
-//       <icosahedronGeometry args={[1.4, 3]} />
-//       <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
-//     </mesh>
-//   );
-// };
-
 //* Letter
-const Letter = () => {
+const Letter = ({ char }) => {
   const meshRef = useRef();
 
   useFrame(() => {
@@ -44,7 +27,7 @@ const Letter = () => {
   });
 
   return (
-    <group>
+    <group ref={meshRef} position={[-3, 0, 0]} castShadow>
       <Text3D
         font="/fonts/helvetiker_bold.typeface.json"
         size={1.5}
@@ -53,11 +36,8 @@ const Letter = () => {
         bevelSize={0.03}
         bevelThickness={0.03}
         bevelSegments={3}
-        ref={meshRef}
-        position={[-3, 0, 0]}
-        castShadow
       >
-        L
+        {char}
         <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
       </Text3D>
     </group>
