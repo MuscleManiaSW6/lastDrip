@@ -12,14 +12,14 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
-      <Letter char={"L"} />
+      <Word />
       <Floor />
     </Canvas>
   );
 };
 
 //* Letter
-const Letter = ({ char }) => {
+const Letter = ({ char, position }) => {
   const meshRef = useRef();
 
   useFrame(() => {
@@ -27,7 +27,7 @@ const Letter = ({ char }) => {
   });
 
   return (
-    <group ref={meshRef} position={[-3, 0, 0]} castShadow>
+    <group ref={meshRef} position={position} castShadow>
       <Text3D
         font="/fonts/helvetiker_bold.typeface.json"
         size={1.5}
@@ -40,6 +40,21 @@ const Letter = ({ char }) => {
         {char}
         <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
       </Text3D>
+    </group>
+  );
+};
+
+const Word = () => {
+  return (
+    <group>
+      <Letter char={"L"} position={[0, 0, 0]} />
+      <Letter char={"A"} position={[1.5, 0, 0]} />
+      <Letter char={"S"} position={[3, 0, 0]} />
+      <Letter char={"T"} position={[4.5, 0, 0]} />
+      <Letter char={"D"} position={[6, 0, 0]} />
+      <Letter char={"R"} position={[7.5, 0, 0]} />
+      <Letter char={"I"} position={[9, 0, 0]} />
+      <Letter char={"P"} position={[10.5, 0, 0]} />
     </group>
   );
 };
