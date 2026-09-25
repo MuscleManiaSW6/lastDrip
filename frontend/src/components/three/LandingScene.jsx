@@ -1,7 +1,23 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 import { Canvas, useThree } from "@react-three/fiber";
 import { Text3D, Environment } from "@react-three/drei";
+
+const ResponsiveCamera = () => {
+  const { camera, size } = useThree();
+
+  useEffect(() => {
+    const isMobile = size.width < 768;
+
+    camera.position.set(0, isMobile ? 1.5 : 2.5, isMobile ? 11 : 5);
+
+    camera.fov = isMobile ? 50 : 50;
+
+    camera.updateProjectionMatrix();
+  }, [camera, size.width]);
+
+  return null;
+};
 
 //* Landing Scene
 const LandingScene = () => {
@@ -12,6 +28,7 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
+      <ResponsiveCamera />
       <Word />
       <Floor />
     </Canvas>
@@ -19,14 +36,14 @@ const LandingScene = () => {
 };
 
 //* Letter
-const Letter = ({ char, position }) => {
+const Letter = ({ char, position, size }) => {
   const meshRef = useRef();
 
   return (
     <group ref={meshRef} position={position} castShadow>
       <Text3D
         font="/fonts/helvetiker_bold.typeface.json"
-        size={1.5}
+        size={size}
         height={0.25}
         bevelEnabled
         bevelSize={0.03}
@@ -43,21 +60,21 @@ const Letter = ({ char, position }) => {
 //* Word
 const Word = () => {
   const wordRef = useRef();
+  const { size: canvasSize } = useThree();
 
-  const { viewport } = useThree();
-
-  const scale = Math.min(0.65, (viewport.width * 0.85) / 10.49);
+  const isMobile = canvasSize.width < 768;
+  const letterSize = isMobile ? 0.75 : 1.5;
 
   return (
-    <group ref={wordRef} scale={scale}>
-      <Letter char={"L"} position={[-5.24, 0, 0]} />
-      <Letter char={"A"} position={[-4.05, 0, 0]} />
-      <Letter char={"S"} position={[-2.4, 0, 0]} />
-      <Letter char={"T"} position={[-0.97, 0, 0]} />
-      <Letter char={"D"} position={[0.42, 0, 0]} />
-      <Letter char={"R"} position={[1.92, 0, 0]} />
-      <Letter char={"I"} position={[3.39, 0, 0]} />
-      <Letter char={"P"} position={[3.99, 0, 0]} />
+    <group ref={wordRef}>
+      <Letter char={"L"} position={[-5.24, 0, 0]} size={letterSize} />
+      <Letter char={"A"} position={[-4.05, 0, 0]} size={letterSize} />
+      <Letter char={"S"} position={[-2.4, 0, 0]} size={letterSize} />
+      <Letter char={"T"} position={[-0.97, 0, 0]} size={letterSize} />
+      <Letter char={"D"} position={[0.42, 0, 0]} size={letterSize} />
+      <Letter char={"R"} position={[1.92, 0, 0]} size={letterSize} />
+      <Letter char={"I"} position={[3.39, 0, 0]} size={letterSize} />
+      <Letter char={"P"} position={[3.99, 0, 0]} size={letterSize} />
     </group>
   );
 };
