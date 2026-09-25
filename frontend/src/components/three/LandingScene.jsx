@@ -22,9 +22,9 @@ const LandingScene = () => {
 const Letter = ({ char, position }) => {
   const meshRef = useRef();
 
-  useFrame(() => {
-    meshRef.current.rotation.y += 0.01;
-  });
+  // useFrame(() => {
+  //   meshRef.current.rotation.y += 0.01;
+  // });
 
   return (
     <group ref={meshRef} position={position} castShadow>
@@ -53,14 +53,14 @@ const Word = () => {
 
   return (
     <group ref={wordRef}>
-      <Letter char={"L"} position={[0, 0, 0]} />
-      <Letter char={"A"} position={[1.5, 0, 0]} />
-      <Letter char={"S"} position={[3, 0, 0]} />
-      <Letter char={"T"} position={[4.5, 0, 0]} />
-      <Letter char={"D"} position={[6, 0, 0]} />
-      <Letter char={"R"} position={[7.5, 0, 0]} />
-      <Letter char={"I"} position={[9, 0, 0]} />
-      <Letter char={"P"} position={[10.5, 0, 0]} />
+      <Letter char={"L"} position={[-5.25, 0, 0]} />
+      <Letter char={"A"} position={[-3.75, 0, 0]} />
+      <Letter char={"S"} position={[-2.25, 0, 0]} />
+      <Letter char={"T"} position={[-0.75, 0, 0]} />
+      <Letter char={"D"} position={[0.75, 0, 0]} />
+      <Letter char={"R"} position={[2.25, 0, 0]} />
+      <Letter char={"I"} position={[3.75, 0, 0]} />
+      <Letter char={"P"} position={[5.25, 0, 0]} />
     </group>
   );
 };
