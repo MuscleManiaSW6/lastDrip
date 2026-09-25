@@ -25,14 +25,17 @@ const LandingScene = ({ anchorRef }) => {
 //* Letter
 const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
   const meshRef = useRef();
+  const textRef = useRef();
+  const clothingRef = useRef();
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
 
     const idleZ = Math.sin(t * 0.8 + index * 0.55) * 0.025;
-    const targetZ = active ? 1.15 : idleZ;
+    const idleRotationY = Math.sin(t * 0.7 + index * 0.45) * 0.025;
 
-    const targetScale = active ? 1.18 : 1;
+    const targetZ = active ? 0.75 : idleZ;
+    const targetScale = active ? 1.12 : 1;
 
     meshRef.current.position.z += (targetZ - meshRef.current.position.z) * 0.08;
 
@@ -43,18 +46,36 @@ const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
     meshRef.current.scale.z += (targetScale - meshRef.current.scale.z) * 0.08;
 
     meshRef.current.rotation.y +=
-      ((active ? -0.12 : idleZ) - meshRef.current.rotation.y) * 0.08;
+      ((active ? -0.12 : idleRotationY) - meshRef.current.rotation.y) * 0.08;
+
+    const textScale = active ? 0 : 1;
+    const clothingScale = active ? 1 : 0;
+
+    textRef.current.scale.x += (textScale - textRef.current.scale.x) * 0.12;
+
+    textRef.current.scale.y += (textScale - textRef.current.scale.y) * 0.12;
+
+    textRef.current.scale.z += (textScale - textRef.current.scale.z) * 0.12;
+
+    clothingRef.current.scale.x +=
+      (clothingScale - clothingRef.current.scale.x) * 0.12;
+
+    clothingRef.current.scale.y +=
+      (clothingScale - clothingRef.current.scale.y) * 0.12;
+
+    clothingRef.current.scale.z +=
+      (clothingScale - clothingRef.current.scale.z) * 0.12;
   });
 
   return (
-    <group ref={meshRef} position={position} castShadow scale={active ? 0 : 1}>
+    <group ref={meshRef} position={position} castShadow>
+      {/* Interaction zone */}
       <mesh
-        position={[0, 0, 0]}
-        onPointerOver={(e) => {
+        onPointerEnter={(e) => {
           e.stopPropagation();
           onFocus();
         }}
-        onPointerOut={(e) => {
+        onPointerLeave={(e) => {
           e.stopPropagation();
           onBlur();
         }}
@@ -67,24 +88,29 @@ const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      <Text3D
-        font="/fonts/InstrumentSerif-Regular.typeface.json"
-        size={size}
-        height={0.35}
-        bevelEnabled
-        bevelSize={0.06}
-        bevelThickness={0.05}
-        bevelSegments={4}
-      >
-        {char}
-        <meshStandardMaterial
-          color="#626B52"
-          metalness={0.85}
-          roughness={0.18}
-        />
-      </Text3D>
+      {/* Letter */}
+      <group ref={textRef}>
+        <Text3D
+          font="/fonts/InstrumentSerif-Regular.typeface.json"
+          size={size}
+          height={0.35}
+          bevelEnabled
+          bevelSize={0.06}
+          bevelThickness={0.05}
+          bevelSegments={4}
+        >
+          {char}
 
-      <group scale={active ? 1 : 0} position={[0, 0, 1.1]}>
+          <meshStandardMaterial
+            color="#626B52"
+            metalness={0.85}
+            roughness={0.18}
+          />
+        </Text3D>
+      </group>
+
+      {/* Clothing placeholder */}
+      <group ref={clothingRef} position={[0, 0, 1.1]}>
         <mesh>
           <boxGeometry args={[0.9, 0.5, 0.5]} />
           <meshStandardMaterial
@@ -156,87 +182,41 @@ const Word = ({ anchorRef }) => {
 
     const t = state.clock.elapsedTime;
 
+    const idleRotation = Math.sin(t * 0.35) * 0.018;
+    const idlePositionY = Math.sin(t * 0.5) * 0.025;
+
     wordRef.current.rotation.z +=
-      (Math.sin(t * 0.35) * 0.018 - wordRef.current.rotation.z) * 0.04;
+      (idleRotation - wordRef.current.rotation.z) * 0.04;
 
     wordRef.current.position.y +=
-      (Math.sin(t * 0.5) * 0.025 - wordRef.current.position.y) * 0.04;
+      (idlePositionY - wordRef.current.position.y) * 0.04;
   });
+
+  const letters = [
+    { char: "L", position: [-4.63, 0, 0] },
+    { char: "A", position: [-3.48, 0, 0] },
+    { char: "S", position: [-2.15, 0, 0] },
+    { char: "T", position: [-0.88, 0, 0] },
+    { char: "D", position: [0.42, 0, 0] },
+    { char: "R", position: [1.72, 0, 0] },
+    { char: "I", position: [3.02, 0, 0] },
+    { char: "P", position: [3.62, 0, 0] },
+  ];
 
   return (
     <group ref={wordRef}>
-      <Letter
-        char="L"
-        position={[-4.63, 0, 0]}
-        size={1.5}
-        index={0}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="A"
-        position={[-3.48, 0, 0]}
-        size={1.5}
-        index={1}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="S"
-        position={[-2.15, 0, 0]}
-        size={1.5}
-        index={2}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="T"
-        position={[-0.88, 0, 0]}
-        size={1.5}
-        index={3}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="D"
-        position={[0.42, 0, 0]}
-        size={1.5}
-        index={4}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="R"
-        position={[1.72, 0, 0]}
-        size={1.5}
-        index={5}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="I"
-        position={[3.02, 0, 0]}
-        size={1.5}
-        index={6}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
-      <Letter
-        char="P"
-        position={[3.62, 0, 0]}
-        size={1.5}
-        index={7}
-        active={activeIndex === 0}
-        onFocus={() => setActiveIndex(0)}
-        onBlur={() => setActiveIndex(null)}
-      />
+      {letters.map((letter, index) => (
+        <Letter
+          key={letter.char}
+          char={letter.char}
+          position={letter.position}
+          size={1.5}
+          index={index}
+          active={activeIndex === index}
+          onFocus={() => setActiveIndex(index)}
+          onBlur={() => setActiveIndex(null)}
+        />
+      ))}
     </group>
   );
 };
