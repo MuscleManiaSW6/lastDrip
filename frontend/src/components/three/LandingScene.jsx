@@ -65,7 +65,7 @@ const Word = ({ anchorRef }) => {
   const leftPoint = useRef(new THREE.Vector3());
   const rightPoint = useRef(new THREE.Vector3());
 
-  const baseWidth = 10.5;
+  const baseWidth = 9.75;
 
   useFrame(() => {
     const anchor = anchorRef.current;
@@ -96,7 +96,11 @@ const Word = ({ anchorRef }) => {
 
     const worldWidth = leftPoint.current.distanceTo(rightPoint.current);
 
-    const scale = THREE.MathUtils.clamp(worldWidth / baseWidth, 0.15, 0.65);
+    const scale = THREE.MathUtils.clamp(
+      (worldWidth / baseWidth) * 1.1,
+      0.04,
+      0.8,
+    );
 
     wordRef.current.scale.setScalar(scale);
 
@@ -114,14 +118,14 @@ const Word = ({ anchorRef }) => {
 
   return (
     <group ref={wordRef}>
-      <Letter char="L" position={[-4.2, 0, 0]} size={1.5} index={0} />
-      <Letter char="A" position={[-3.05, 0, 0]} size={1.5} index={1} />
-      <Letter char="S" position={[-1.72, 0, 0]} size={1.5} index={2} />
-      <Letter char="T" position={[-0.45, 0, 0]} size={1.5} index={3} />
-      <Letter char="D" position={[0.85, 0, 0]} size={1.5} index={4} />
-      <Letter char="R" position={[2.15, 0, 0]} size={1.5} index={5} />
-      <Letter char="I" position={[3.45, 0, 0]} size={1.5} index={6} />
-      <Letter char="P" position={[4.05, 0, 0]} size={1.5} index={7} />
+      <Letter char="L" position={[-4.63, 0, 0]} size={1.5} index={0} />
+      <Letter char="A" position={[-3.48, 0, 0]} size={1.5} index={1} />
+      <Letter char="S" position={[-2.15, 0, 0]} size={1.5} index={2} />
+      <Letter char="T" position={[-0.88, 0, 0]} size={1.5} index={3} />
+      <Letter char="D" position={[0.42, 0, 0]} size={1.5} index={4} />
+      <Letter char="R" position={[1.72, 0, 0]} size={1.5} index={5} />
+      <Letter char="I" position={[3.02, 0, 0]} size={1.5} index={6} />
+      <Letter char="P" position={[3.62, 0, 0]} size={1.5} index={7} />
     </group>
   );
 };
