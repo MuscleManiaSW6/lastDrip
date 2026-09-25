@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
@@ -23,17 +23,50 @@ const LandingScene = ({ anchorRef }) => {
 };
 
 //* Letter
-const Letter = ({ char, position, size, index }) => {
+const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
   const meshRef = useRef();
 
-  useFrame(() => {
-    const offset = (index - 3.5) * 0.015;
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
 
-    meshRef.current.position.z += (offset - meshRef.current.position.z) * 0.05;
+    const idleZ = Math.sin(t * 0.8 + index * 0.55) * 0.025;
+    const targetZ = active ? 1.15 : idleZ;
+
+    const targetScale = active ? 1.18 : 1;
+
+    meshRef.current.position.z += (targetZ - meshRef.current.position.z) * 0.08;
+
+    meshRef.current.scale.x += (targetScale - meshRef.current.scale.x) * 0.08;
+
+    meshRef.current.scale.y += (targetScale - meshRef.current.scale.y) * 0.08;
+
+    meshRef.current.scale.z += (targetScale - meshRef.current.scale.z) * 0.08;
+
+    meshRef.current.rotation.y +=
+      ((active ? -0.12 : idleZ) - meshRef.current.rotation.y) * 0.08;
   });
 
   return (
-    <group ref={meshRef} position={position} castShadow>
+    <group ref={meshRef} position={position} castShadow scale={active ? 0 : 1}>
+      <mesh
+        position={[0, 0, 0]}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          onFocus();
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          onBlur();
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onFocus();
+        }}
+      >
+        <boxGeometry args={[1.15, 1.8, 1.5]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       <Text3D
         font="/fonts/InstrumentSerif-Regular.typeface.json"
         size={size}
@@ -44,8 +77,23 @@ const Letter = ({ char, position, size, index }) => {
         bevelSegments={4}
       >
         {char}
-        <meshStandardMaterial color="#626B52" metalness={0.85} roughness={0.18} />
+        <meshStandardMaterial
+          color="#626B52"
+          metalness={0.85}
+          roughness={0.18}
+        />
       </Text3D>
+
+      <group scale={active ? 1 : 0} position={[0, 0, 1.1]}>
+        <mesh>
+          <boxGeometry args={[0.9, 0.5, 0.5]} />
+          <meshStandardMaterial
+            color="#626B52"
+            metalness={0.85}
+            roughness={0.18}
+          />
+        </mesh>
+      </group>
     </group>
   );
 };
@@ -53,10 +101,10 @@ const Letter = ({ char, position, size, index }) => {
 //* Word
 const Word = ({ anchorRef }) => {
   const wordRef = useRef();
+  const [activeIndex, setActiveIndex] = useState(null);
 
   const camera = useThree((state) => state.camera);
   const canvas = useThree((state) => state.gl.domElement);
-  const pointer = useThree((state) => state.pointer);
 
   const raycaster = useRef(new THREE.Raycaster());
   const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0));
@@ -67,7 +115,7 @@ const Word = ({ anchorRef }) => {
 
   const baseWidth = 9.75;
 
-  useFrame(() => {
+  useFrame((state) => {
     const anchor = anchorRef.current;
 
     if (!anchor) return;
@@ -106,26 +154,89 @@ const Word = ({ anchorRef }) => {
 
     wordRef.current.position.lerp(centerPoint.current, 0.12);
 
-    const targetRotationY = pointer.x * 0.18;
-    const targetRotationX = -pointer.y * 0.08;
+    const t = state.clock.elapsedTime;
 
-    wordRef.current.rotation.y +=
-      (targetRotationY - wordRef.current.rotation.y) * 0.06;
+    wordRef.current.rotation.z +=
+      (Math.sin(t * 0.35) * 0.018 - wordRef.current.rotation.z) * 0.04;
 
-    wordRef.current.rotation.x +=
-      (targetRotationX - wordRef.current.rotation.x) * 0.06;
+    wordRef.current.position.y +=
+      (Math.sin(t * 0.5) * 0.025 - wordRef.current.position.y) * 0.04;
   });
 
   return (
     <group ref={wordRef}>
-      <Letter char="L" position={[-4.63, 0, 0]} size={1.5} index={0} />
-      <Letter char="A" position={[-3.48, 0, 0]} size={1.5} index={1} />
-      <Letter char="S" position={[-2.15, 0, 0]} size={1.5} index={2} />
-      <Letter char="T" position={[-0.88, 0, 0]} size={1.5} index={3} />
-      <Letter char="D" position={[0.42, 0, 0]} size={1.5} index={4} />
-      <Letter char="R" position={[1.72, 0, 0]} size={1.5} index={5} />
-      <Letter char="I" position={[3.02, 0, 0]} size={1.5} index={6} />
-      <Letter char="P" position={[3.62, 0, 0]} size={1.5} index={7} />
+      <Letter
+        char="L"
+        position={[-4.63, 0, 0]}
+        size={1.5}
+        index={0}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="A"
+        position={[-3.48, 0, 0]}
+        size={1.5}
+        index={1}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="S"
+        position={[-2.15, 0, 0]}
+        size={1.5}
+        index={2}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="T"
+        position={[-0.88, 0, 0]}
+        size={1.5}
+        index={3}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="D"
+        position={[0.42, 0, 0]}
+        size={1.5}
+        index={4}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="R"
+        position={[1.72, 0, 0]}
+        size={1.5}
+        index={5}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="I"
+        position={[3.02, 0, 0]}
+        size={1.5}
+        index={6}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
+      <Letter
+        char="P"
+        position={[3.62, 0, 0]}
+        size={1.5}
+        index={7}
+        active={activeIndex === 0}
+        onFocus={() => setActiveIndex(0)}
+        onBlur={() => setActiveIndex(null)}
+      />
     </group>
   );
 };
