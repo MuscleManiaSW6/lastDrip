@@ -22,13 +22,45 @@ const LandingScene = ({ anchorRef }) => {
   );
 };
 
+//* Clothing-placeholder
+const ClothingPlaceholder = ({ type }) => {
+  const sizes = {
+    shoe: [1.1, 0.45, 0.7],
+    tshirt: [0.9, 0.8, 0.35],
+    cap: [0.75, 0.45, 0.65],
+    jeans: [0.7, 1, 0.4],
+  };
+
+  return (
+    <mesh>
+      <boxGeometry args={sizes[type]} />
+      <meshStandardMaterial color="#626B52" metalness={0.85} roughness={0.18} />
+    </mesh>
+  );
+};
+
 //* Letter
-const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
+const Letter = ({
+  char,
+  position,
+  size,
+  index,
+  type,
+  active,
+  onFocus,
+  onBlur,
+}) => {
   const meshRef = useRef();
   const textRef = useRef();
   const clothingRef = useRef();
+  const draggingRef = useRef(false);
+  const pointerRef = useRef({ x: 0, y: 0 });
 
   useFrame((state) => {
+    if (active && !draggingRef.current) {
+      clothingRef.current.rotation.y += 0.004;
+    }
+
     const t = state.clock.elapsedTime;
 
     const idleZ = Math.sin(t * 0.8 + index * 0.55) * 0.025;
@@ -77,11 +109,47 @@ const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
         }}
         onPointerLeave={(e) => {
           e.stopPropagation();
-          onBlur();
+
+          if (!draggingRef.current) {
+            onBlur();
+          }
         }}
-        onClick={(e) => {
+        onPointerDown={(e) => {
           e.stopPropagation();
+
+          draggingRef.current = true;
+
+          pointerRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+          };
+
+          e.target.setPointerCapture(e.pointerId);
+
           onFocus();
+        }}
+        onPointerMove={(e) => {
+          e.stopPropagation();
+
+          if (!draggingRef.current) return;
+
+          const deltaX = e.clientX - pointerRef.current.x;
+          const deltaY = e.clientY - pointerRef.current.y;
+
+          clothingRef.current.rotation.y += deltaX * 0.01;
+          clothingRef.current.rotation.x += deltaY * 0.01;
+
+          pointerRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+          };
+        }}
+        onPointerUp={(e) => {
+          e.stopPropagation();
+
+          draggingRef.current = false;
+
+          e.target.releasePointerCapture(e.pointerId);
         }}
       >
         <boxGeometry args={[1.15, 1.8, 1.5]} />
@@ -111,14 +179,7 @@ const Letter = ({ char, position, size, index, active, onFocus, onBlur }) => {
 
       {/* Clothing placeholder */}
       <group ref={clothingRef} position={[0, 0, 1.1]}>
-        <mesh>
-          <boxGeometry args={[0.9, 0.5, 0.5]} />
-          <meshStandardMaterial
-            color="#626B52"
-            metalness={0.85}
-            roughness={0.18}
-          />
-        </mesh>
+        <ClothingPlaceholder type={type} />
       </group>
     </group>
   );
@@ -193,14 +254,14 @@ const Word = ({ anchorRef }) => {
   });
 
   const letters = [
-    { char: "L", position: [-4.63, 0, 0] },
-    { char: "A", position: [-3.48, 0, 0] },
-    { char: "S", position: [-2.15, 0, 0] },
-    { char: "T", position: [-0.88, 0, 0] },
-    { char: "D", position: [0.42, 0, 0] },
-    { char: "R", position: [1.72, 0, 0] },
-    { char: "I", position: [3.02, 0, 0] },
-    { char: "P", position: [3.62, 0, 0] },
+    { char: "L", position: [-4.63, 0, 0], type: "shoe" },
+    { char: "A", position: [-3.48, 0, 0], type: "tshirt" },
+    { char: "S", position: [-2.15, 0, 0], type: "cap" },
+    { char: "T", position: [-0.88, 0, 0], type: "jeans" },
+    { char: "D", position: [0.42, 0, 0], type: "shoe" },
+    { char: "R", position: [1.72, 0, 0], type: "tshirt" },
+    { char: "I", position: [3.02, 0, 0], type: "cap" },
+    { char: "P", position: [3.62, 0, 0], type: "jeans" },
   ];
 
   return (
@@ -212,6 +273,7 @@ const Word = ({ anchorRef }) => {
           position={letter.position}
           size={1.5}
           index={index}
+          type={letter.type}
           active={activeIndex === index}
           onFocus={() => setActiveIndex(index)}
           onBlur={() => setActiveIndex(null)}

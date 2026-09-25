@@ -11,7 +11,10 @@ const Landing = () => {
           <p className="text-label text-olive">Modern Essentials</p>
 
           <h1 className="heading-display mt-5 text-6xl leading-[0.9] md:text-8xl">
-            <span ref={wordAnchorRef} className="opacity-0">
+            <span
+              ref={wordAnchorRef}
+              className="ml-6 inline-block opacity-0 md:ml-12"
+            >
               LASTDRIP
             </span>
             <br />
