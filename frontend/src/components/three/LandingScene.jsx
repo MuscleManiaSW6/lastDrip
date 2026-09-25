@@ -19,12 +19,13 @@ const LandingScene = () => {
 };
 
 //* Letter
-const Letter = ({ char, position }) => {
+const Letter = ({ char, position, index }) => {
   const meshRef = useRef();
 
-  // useFrame(() => {
-  //   meshRef.current.rotation.y += 0.01;
-  // });
+  useFrame((state) => {
+    meshRef.current.rotation.y =
+      Math.sin(state.clock.elapsedTime * 0.8 + index * 0.4) * 0.08;
+  });
 
   return (
     <group ref={meshRef} position={position} castShadow>
@@ -44,23 +45,24 @@ const Letter = ({ char, position }) => {
   );
 };
 
+//* Word
 const Word = () => {
   const wordRef = useRef();
 
-  useFrame(() => {
-    wordRef.current.rotation.y += 0.01;
+  useFrame((state) => {
+    wordRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.25;
   });
 
   return (
-    <group ref={wordRef}>
-      <Letter char={"L"} position={[-5.25, 0, 0]} />
-      <Letter char={"A"} position={[-3.75, 0, 0]} />
-      <Letter char={"S"} position={[-2.25, 0, 0]} />
-      <Letter char={"T"} position={[-0.75, 0, 0]} />
-      <Letter char={"D"} position={[0.75, 0, 0]} />
-      <Letter char={"R"} position={[2.25, 0, 0]} />
-      <Letter char={"I"} position={[3.75, 0, 0]} />
-      <Letter char={"P"} position={[5.25, 0, 0]} />
+    <group ref={wordRef} scale={0.65}>
+      <Letter char={"L"} position={[-5.25, 0, 0]} index={0} />
+      <Letter char={"A"} position={[-3.75, 0, 0]} index={1} />
+      <Letter char={"S"} position={[-2.25, 0, 0]} index={2} />
+      <Letter char={"T"} position={[-0.75, 0, 0]} index={3} />
+      <Letter char={"D"} position={[0.75, 0, 0]} index={4} />
+      <Letter char={"R"} position={[2.25, 0, 0]} index={5} />
+      <Letter char={"I"} position={[3.75, 0, 0]} index={6} />
+      <Letter char={"P"} position={[5.25, 0, 0]} index={7} />
     </group>
   );
 };
