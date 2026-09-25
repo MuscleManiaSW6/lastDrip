@@ -44,7 +44,7 @@ const Letter = ({ char, position }) => {
 const Word = () => {
   const wordRef = useRef();
 
-  const { viewport } = useThree;
+  const { viewport } = useThree();
 
   const scale = Math.min(0.65, (viewport.width * 0.85) / 10.49);
 
