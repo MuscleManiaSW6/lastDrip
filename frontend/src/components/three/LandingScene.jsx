@@ -50,6 +50,8 @@ const Letter = ({
   interactionEnabled,
   onFocus,
   onBlur,
+  onDragStart,
+  onDragEnd,
 }) => {
   const meshRef = useRef();
   const textRef = useRef();
@@ -107,6 +109,7 @@ const Letter = ({
     <group ref={meshRef} position={position} castShadow>
       {/* Interaction zone */}
       <mesh
+        position={active ? [0, 0.65, 0.45] : [0, 0, 0]}
         onPointerEnter={
           interactionEnabled
             ? (e) => {
@@ -141,6 +144,7 @@ const Letter = ({
                 e.target.setPointerCapture(e.pointerId);
 
                 onFocus();
+                onDragStart();
               }
             : undefined
         }
@@ -171,13 +175,14 @@ const Letter = ({
                 e.stopPropagation();
 
                 draggingRef.current = false;
+                onDragEnd();
 
                 e.target.releasePointerCapture(e.pointerId);
               }
             : undefined
         }
       >
-        <boxGeometry args={[1.15, 1.8, 1.5]} />
+        <boxGeometry args={active ? [2.4, 3.2, 3] : [1.15, 1.8, 1.5]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
@@ -214,6 +219,7 @@ const Letter = ({
 const Word = ({ anchorRef }) => {
   const wordRef = useRef();
   const [activeIndex, setActiveIndex] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const camera = useThree((state) => state.camera);
   const canvas = useThree((state) => state.gl.domElement);
@@ -300,9 +306,13 @@ const Word = ({ anchorRef }) => {
           index={index}
           type={letter.type}
           active={activeIndex === index}
-          interactionEnabled={activeIndex === null || activeIndex === index}
+          interactionEnabled={
+            !isDragging && (activeIndex === null || activeIndex === index)
+          }
           onFocus={() => setActiveIndex(index)}
           onBlur={() => setActiveIndex(null)}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setIsDragging(false)}
         />
       ))}
     </group>
