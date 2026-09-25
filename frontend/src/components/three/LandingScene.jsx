@@ -3,8 +3,10 @@ import { useRef } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
 
+import * as THREE from "three";
+
 //* Landing Scene
-const LandingScene = () => {
+const LandingScene = ({ anchorRef }) => {
   return (
     <Canvas shadows>
       <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={40} />
@@ -14,7 +16,7 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
-      <Word />
+      <Word anchorRef={anchorRef} />
       <Floor />
     </Canvas>
   );
@@ -49,18 +51,57 @@ const Letter = ({ char, position, size, index }) => {
 };
 
 //* Word
-const Word = () => {
-  const { viewport, pointer } = useThree((state) => ({
-    viewport: state.viewport,
-    pointer: state.pointer,
-  }));
-
-  const baseWidth = 8.4;
-  const scale = Math.min(0.65, (viewport.width * 0.85) / baseWidth);
-
+const Word = ({ anchorRef }) => {
   const wordRef = useRef();
 
+  const camera = useThree((state) => state.camera);
+  const canvas = useThree((state) => state.gl.domElement);
+  const pointer = useThree((state) => state.pointer);
+
+  const raycaster = useRef(new THREE.Raycaster());
+  const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0));
+
+  const centerPoint = useRef(new THREE.Vector3());
+  const leftPoint = useRef(new THREE.Vector3());
+  const rightPoint = useRef(new THREE.Vector3());
+
+  const baseWidth = 10.5;
+
   useFrame(() => {
+    const anchor = anchorRef.current;
+
+    if (!anchor) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const anchorRect = anchor.getBoundingClientRect();
+
+    const screenToWorld = (x, y, target) => {
+      const ndcX = ((x - canvasRect.left) / canvasRect.width) * 2 - 1;
+
+      const ndcY = 1 - ((y - canvasRect.top) / canvasRect.height) * 2;
+
+      raycaster.current.setFromCamera({ x: ndcX, y: ndcY }, camera);
+
+      raycaster.current.ray.intersectPlane(plane.current, target);
+    };
+
+    const centerX = anchorRect.left + anchorRect.width / 2;
+    const centerY = anchorRect.top + anchorRect.height / 2;
+
+    screenToWorld(centerX, centerY, centerPoint.current);
+
+    screenToWorld(anchorRect.left, centerY, leftPoint.current);
+
+    screenToWorld(anchorRect.right, centerY, rightPoint.current);
+
+    const worldWidth = leftPoint.current.distanceTo(rightPoint.current);
+
+    const scale = THREE.MathUtils.clamp(worldWidth / baseWidth, 0.15, 0.65);
+
+    wordRef.current.scale.setScalar(scale);
+
+    wordRef.current.position.lerp(centerPoint.current, 0.12);
+
     const targetRotationY = pointer.x * 0.18;
     const targetRotationX = -pointer.y * 0.08;
 
@@ -72,7 +113,7 @@ const Word = () => {
   });
 
   return (
-    <group ref={wordRef} scale={scale}>
+    <group ref={wordRef}>
       <Letter char="L" position={[-4.2, 0, 0]} size={1.5} index={0} />
       <Letter char="A" position={[-3.05, 0, 0]} size={1.5} index={1} />
       <Letter char="S" position={[-1.72, 0, 0]} size={1.5} index={2} />
