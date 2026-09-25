@@ -47,6 +47,7 @@ const Letter = ({
   index,
   type,
   active,
+  interactionEnabled,
   onFocus,
   onBlur,
 }) => {
@@ -66,8 +67,11 @@ const Letter = ({
     const idleZ = Math.sin(t * 0.8 + index * 0.55) * 0.025;
     const idleRotationY = Math.sin(t * 0.7 + index * 0.45) * 0.025;
 
-    const targetZ = active ? 0.75 : idleZ;
+    const targetY = active ? 0.65 : 0;
+    const targetZ = active ? 0.45 : idleZ;
     const targetScale = active ? 1.12 : 1;
+
+    meshRef.current.position.y += (targetY - meshRef.current.position.y) * 0.08;
 
     meshRef.current.position.z += (targetZ - meshRef.current.position.z) * 0.08;
 
@@ -103,54 +107,75 @@ const Letter = ({
     <group ref={meshRef} position={position} castShadow>
       {/* Interaction zone */}
       <mesh
-        onPointerEnter={(e) => {
-          e.stopPropagation();
-          onFocus();
-        }}
-        onPointerLeave={(e) => {
-          e.stopPropagation();
+        onPointerEnter={
+          interactionEnabled
+            ? (e) => {
+                e.stopPropagation();
+                onFocus();
+              }
+            : undefined
+        }
+        onPointerLeave={
+          interactionEnabled
+            ? (e) => {
+                e.stopPropagation();
 
-          if (!draggingRef.current) {
-            onBlur();
-          }
-        }}
-        onPointerDown={(e) => {
-          e.stopPropagation();
+                if (!draggingRef.current) {
+                  onBlur();
+                }
+              }
+            : undefined
+        }
+        onPointerDown={
+          interactionEnabled
+            ? (e) => {
+                e.stopPropagation();
 
-          draggingRef.current = true;
+                draggingRef.current = true;
 
-          pointerRef.current = {
-            x: e.clientX,
-            y: e.clientY,
-          };
+                pointerRef.current = {
+                  x: e.clientX,
+                  y: e.clientY,
+                };
 
-          e.target.setPointerCapture(e.pointerId);
+                e.target.setPointerCapture(e.pointerId);
 
-          onFocus();
-        }}
-        onPointerMove={(e) => {
-          e.stopPropagation();
+                onFocus();
+              }
+            : undefined
+        }
+        onPointerMove={
+          interactionEnabled
+            ? (e) => {
+                e.stopPropagation();
 
-          if (!draggingRef.current) return;
+                if (!draggingRef.current) return;
 
-          const deltaX = e.clientX - pointerRef.current.x;
-          const deltaY = e.clientY - pointerRef.current.y;
+                const deltaX = e.clientX - pointerRef.current.x;
 
-          clothingRef.current.rotation.y += deltaX * 0.01;
-          clothingRef.current.rotation.x += deltaY * 0.01;
+                const deltaY = e.clientY - pointerRef.current.y;
 
-          pointerRef.current = {
-            x: e.clientX,
-            y: e.clientY,
-          };
-        }}
-        onPointerUp={(e) => {
-          e.stopPropagation();
+                clothingRef.current.rotation.y += deltaX * 0.01;
+                clothingRef.current.rotation.x += deltaY * 0.01;
 
-          draggingRef.current = false;
+                pointerRef.current = {
+                  x: e.clientX,
+                  y: e.clientY,
+                };
+              }
+            : undefined
+        }
+        onPointerUp={
+          interactionEnabled
+            ? (e) => {
+                e.stopPropagation();
 
-          e.target.releasePointerCapture(e.pointerId);
-        }}
+                draggingRef.current = false;
+
+                e.target.releasePointerCapture(e.pointerId);
+              }
+            : undefined
+        }
       >
         <boxGeometry args={[1.15, 1.8, 1.5]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
@@ -178,7 +203,7 @@ const Letter = ({
       </group>
 
       {/* Clothing placeholder */}
-      <group ref={clothingRef} position={[0, 0, 1.1]}>
+      <group ref={clothingRef} position={[0, 0.1, 0.65]}>
         <ClothingPlaceholder type={type} />
       </group>
     </group>
@@ -275,6 +300,7 @@ const Word = ({ anchorRef }) => {
           index={index}
           type={letter.type}
           active={activeIndex === index}
+          interactionEnabled={activeIndex === null || activeIndex === index}
           onFocus={() => setActiveIndex(index)}
           onBlur={() => setActiveIndex(null)}
         />
