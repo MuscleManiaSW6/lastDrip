@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
 
 //* Landing Scene
@@ -21,8 +21,14 @@ const LandingScene = () => {
 };
 
 //* Letter
-const Letter = ({ char, position, size }) => {
+const Letter = ({ char, position, size, index }) => {
   const meshRef = useRef();
+
+  useFrame(() => {
+    const offset = (index - 3.5) * 0.015;
+
+    meshRef.current.position.z += (offset - meshRef.current.position.z) * 0.05;
+  });
 
   return (
     <group ref={meshRef} position={position} castShadow>
@@ -44,22 +50,43 @@ const Letter = ({ char, position, size }) => {
 
 //* Word
 const Word = () => {
-  const wordRef = useRef();
-  const viewport = useThree((state) => state.viewport);
+  const { viewport, pointer } = useThree((state) => ({
+    viewport: state.viewport,
+    pointer: state.pointer,
+  }));
 
   const baseWidth = 8.4;
   const scale = Math.min(0.65, (viewport.width * 0.85) / baseWidth);
 
+  const wordRef = useRef();
+
+  useFrame(() => {
+    const targetRotationY = pointer.x * 0.18;
+    const targetRotationX = -pointer.y * 0.08;
+
+    wordRef.current.rotation.y +=
+      (targetRotationY - wordRef.current.rotation.y) * 0.06;
+
+    wordRef.current.rotation.x +=
+      (targetRotationX - wordRef.current.rotation.x) * 0.06;
+
+    wordRef.current.rotation.x +=
+      pointer.x * 0.18 - wordRef.current.position.x * 0.06;
+
+    wordRef.current.rotation.y +=
+      pointer.y * 0.08 - wordRef.current.position.y * 0.06;
+  });
+
   return (
     <group ref={wordRef} scale={scale}>
-      <Letter char="L" position={[-4.2, 0, 0]} size={1.5} />
-      <Letter char="A" position={[-3.05, 0, 0]} size={1.5} />
-      <Letter char="S" position={[-1.72, 0, 0]} size={1.5} />
-      <Letter char="T" position={[-0.45, 0, 0]} size={1.5} />
-      <Letter char="D" position={[0.85, 0, 0]} size={1.5} />
-      <Letter char="R" position={[2.15, 0, 0]} size={1.5} />
-      <Letter char="I" position={[3.45, 0, 0]} size={1.5} />
-      <Letter char="P" position={[4.05, 0, 0]} size={1.5} />
+      <Letter char="L" position={[-4.2, 0, 0]} size={1.5} index={0} />
+      <Letter char="A" position={[-3.05, 0, 0]} size={1.5} index={1} />
+      <Letter char="S" position={[-1.72, 0, 0]} size={1.5} index={2} />
+      <Letter char="T" position={[-0.45, 0, 0]} size={1.5} index={3} />
+      <Letter char="D" position={[0.85, 0, 0]} size={1.5} index={4} />
+      <Letter char="R" position={[2.15, 0, 0]} size={1.5} index={5} />
+      <Letter char="I" position={[3.45, 0, 0]} size={1.5} index={6} />
+      <Letter char="P" position={[4.05, 0, 0]} size={1.5} index={7} />
     </group>
   );
 };
