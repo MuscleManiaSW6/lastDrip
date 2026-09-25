@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 
 import { Canvas, useThree } from "@react-three/fiber";
-import { Text3D, Environment } from "@react-three/drei";
+import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
 
 const ResponsiveCamera = () => {
   const { camera, size } = useThree();
@@ -10,8 +10,6 @@ const ResponsiveCamera = () => {
     const isMobile = size.width < 768;
 
     camera.position.set(0, isMobile ? 1.5 : 2.5, isMobile ? 11 : 5);
-
-    camera.fov = isMobile ? 50 : 50;
 
     camera.updateProjectionMatrix();
   }, [camera, size.width]);
@@ -22,7 +20,9 @@ const ResponsiveCamera = () => {
 //* Landing Scene
 const LandingScene = () => {
   return (
-    <Canvas shadows camera={{ position: [0, 2.5, 5], fov: 50 }}>
+    <Canvas shadows>
+      <PerspectiveCamera makeDefault position={[0, 2.5, 5]} fov={50} />
+
       <ambientLight intensity={1} />
       <directionalLight castShadow position={[3, 3, 5]} intensity={2} />
 
