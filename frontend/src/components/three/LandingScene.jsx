@@ -1,21 +1,7 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 
 import { Canvas, useThree } from "@react-three/fiber";
 import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
-
-const ResponsiveCamera = () => {
-  const { camera, size } = useThree();
-
-  useEffect(() => {
-    const isMobile = size.width < 768;
-
-    camera.position.set(0, isMobile ? 1.5 : 2.5, isMobile ? 11 : 5);
-
-    camera.updateProjectionMatrix();
-  }, [camera, size.width]);
-
-  return null;
-};
 
 //* Landing Scene
 const LandingScene = () => {
@@ -28,7 +14,6 @@ const LandingScene = () => {
 
       <Environment preset="studio" />
 
-      <ResponsiveCamera />
       <Word />
       <Floor />
     </Canvas>
@@ -60,21 +45,21 @@ const Letter = ({ char, position, size }) => {
 //* Word
 const Word = () => {
   const wordRef = useRef();
-  const { size: canvasSize } = useThree();
+  const viewport = useThree((state) => state.viewport);
 
-  const isMobile = canvasSize.width < 768;
-  const letterSize = isMobile ? 0.75 : 1.5;
+  const baseWidth = 8.4;
+  const scale = Math.min(0.65, (viewport.width * 0.85) / baseWidth);
 
   return (
-    <group ref={wordRef}>
-      <Letter char={"L"} position={[-5.24, 0, 0]} size={letterSize} />
-      <Letter char={"A"} position={[-4.05, 0, 0]} size={letterSize} />
-      <Letter char={"S"} position={[-2.4, 0, 0]} size={letterSize} />
-      <Letter char={"T"} position={[-0.97, 0, 0]} size={letterSize} />
-      <Letter char={"D"} position={[0.42, 0, 0]} size={letterSize} />
-      <Letter char={"R"} position={[1.92, 0, 0]} size={letterSize} />
-      <Letter char={"I"} position={[3.39, 0, 0]} size={letterSize} />
-      <Letter char={"P"} position={[3.99, 0, 0]} size={letterSize} />
+    <group ref={wordRef} scale={scale}>
+      <Letter char="L" position={[-4.2, 0, 0]} size={1.5} />
+      <Letter char="A" position={[-3.05, 0, 0]} size={1.5} />
+      <Letter char="S" position={[-1.72, 0, 0]} size={1.5} />
+      <Letter char="T" position={[-0.45, 0, 0]} size={1.5} />
+      <Letter char="D" position={[0.85, 0, 0]} size={1.5} />
+      <Letter char="R" position={[2.15, 0, 0]} size={1.5} />
+      <Letter char="I" position={[3.45, 0, 0]} size={1.5} />
+      <Letter char="P" position={[4.05, 0, 0]} size={1.5} />
     </group>
   );
 };
