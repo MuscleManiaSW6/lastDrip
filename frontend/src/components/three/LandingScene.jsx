@@ -37,14 +37,14 @@ const Letter = ({ char, position, size, index }) => {
       <Text3D
         font="/fonts/InstrumentSerif-Regular.typeface.json"
         size={size}
-        height={0.25}
+        height={0.35}
         bevelEnabled
-        bevelSize={0.03}
-        bevelThickness={0.03}
-        bevelSegments={3}
+        bevelSize={0.06}
+        bevelThickness={0.05}
+        bevelSegments={4}
       >
         {char}
-        <meshStandardMaterial color="#626B52" metalness={1} roughness={0.25} />
+        <meshStandardMaterial color="#626B52" metalness={0.85} roughness={0.18} />
       </Text3D>
     </group>
   );
@@ -97,9 +97,9 @@ const Word = ({ anchorRef }) => {
     const worldWidth = leftPoint.current.distanceTo(rightPoint.current);
 
     const scale = THREE.MathUtils.clamp(
-      (worldWidth / baseWidth) * 1.1,
+      (worldWidth / baseWidth) * 1.35,
       0.04,
-      0.8,
+      0.95,
     );
 
     wordRef.current.scale.setScalar(scale);
