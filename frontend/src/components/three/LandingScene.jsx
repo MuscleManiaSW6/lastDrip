@@ -45,8 +45,14 @@ const Letter = ({ char, position }) => {
 };
 
 const Word = () => {
+  const wordRef = useRef();
+
+  useFrame(() => {
+    wordRef.current.rotation.y += 0.01;
+  });
+
   return (
-    <group>
+    <group ref={wordRef}>
       <Letter char={"L"} position={[0, 0, 0]} />
       <Letter char={"A"} position={[1.5, 0, 0]} />
       <Letter char={"S"} position={[3, 0, 0]} />
