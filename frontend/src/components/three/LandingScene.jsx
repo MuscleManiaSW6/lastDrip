@@ -7,7 +7,7 @@ import { Text3D, Environment, PerspectiveCamera } from "@react-three/drei";
 const LandingScene = () => {
   return (
     <Canvas shadows>
-      <PerspectiveCamera makeDefault position={[0, 2.5, 5]} fov={50} />
+      <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={40} />
 
       <ambientLight intensity={1} />
       <directionalLight castShadow position={[3, 3, 5]} intensity={2} />
@@ -69,12 +69,6 @@ const Word = () => {
 
     wordRef.current.rotation.x +=
       (targetRotationX - wordRef.current.rotation.x) * 0.06;
-
-    wordRef.current.rotation.x +=
-      pointer.x * 0.18 - wordRef.current.position.x * 0.06;
-
-    wordRef.current.rotation.y +=
-      pointer.y * 0.08 - wordRef.current.position.y * 0.06;
   });
 
   return (
