@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Text3D, Environment } from "@react-three/drei";
 
 //* Landing Scene
@@ -19,13 +19,8 @@ const LandingScene = () => {
 };
 
 //* Letter
-const Letter = ({ char, position, index }) => {
+const Letter = ({ char, position }) => {
   const meshRef = useRef();
-
-  useFrame((state) => {
-    meshRef.current.rotation.y =
-      Math.sin(state.clock.elapsedTime * 0.8 + index * 0.4) * 0.08;
-  });
 
   return (
     <group ref={meshRef} position={position} castShadow>
@@ -49,20 +44,20 @@ const Letter = ({ char, position, index }) => {
 const Word = () => {
   const wordRef = useRef();
 
-  useFrame((state) => {
-    wordRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.25;
-  });
+  const { viewport } = useThree;
+
+  const scale = Math.min(0.65, (viewport.width * 0.85) / 10.49);
 
   return (
-    <group ref={wordRef} scale={0.65}>
-      <Letter char={"L"} position={[-5.25, 0, 0]} index={0} />
-      <Letter char={"A"} position={[-3.75, 0, 0]} index={1} />
-      <Letter char={"S"} position={[-2.25, 0, 0]} index={2} />
-      <Letter char={"T"} position={[-0.75, 0, 0]} index={3} />
-      <Letter char={"D"} position={[0.75, 0, 0]} index={4} />
-      <Letter char={"R"} position={[2.25, 0, 0]} index={5} />
-      <Letter char={"I"} position={[3.75, 0, 0]} index={6} />
-      <Letter char={"P"} position={[5.25, 0, 0]} index={7} />
+    <group ref={wordRef} scale={scale}>
+      <Letter char={"L"} position={[-5.24, 0, 0]} />
+      <Letter char={"A"} position={[-4.05, 0, 0]} />
+      <Letter char={"S"} position={[-2.4, 0, 0]} />
+      <Letter char={"T"} position={[-0.97, 0, 0]} />
+      <Letter char={"D"} position={[0.42, 0, 0]} />
+      <Letter char={"R"} position={[1.92, 0, 0]} />
+      <Letter char={"I"} position={[3.39, 0, 0]} />
+      <Letter char={"P"} position={[3.99, 0, 0]} />
     </group>
   );
 };
