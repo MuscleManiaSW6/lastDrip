@@ -35,7 +35,7 @@ const Letter = ({ char, position, size, index }) => {
   return (
     <group ref={meshRef} position={position} castShadow>
       <Text3D
-        font="/fonts/helvetiker_bold.typeface.json"
+        font="/fonts/InstrumentSerif-Regular.typeface.json"
         size={size}
         height={0.25}
         bevelEnabled
